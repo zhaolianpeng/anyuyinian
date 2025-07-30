@@ -26,6 +26,9 @@ func main() {
 	// 文件上传和管理接口
 	http.HandleFunc("/api/upload", service.NewLogMiddleware(service.UploadHandler))
 	http.HandleFunc("/api/files", service.NewLogMiddleware(service.GetFileListHandler))
+	http.HandleFunc("/api/file/delete", service.NewLogMiddleware(service.DeleteFileHandler))
+	http.HandleFunc("/api/file/permission", service.NewLogMiddleware(service.UpdateFilePermissionHandler))
+	http.HandleFunc("/api/file/permission/get", service.NewLogMiddleware(service.GetFilePermissionHandler))
 
 	// 系统配置接口
 	http.HandleFunc("/api/config", service.NewLogMiddleware(service.ConfigHandler))
