@@ -45,7 +45,10 @@ type WxLoginResult struct {
 
 // WxLoginHandler 微信小程序登录接口
 func WxLoginHandler(w http.ResponseWriter, r *http.Request) {
+	LogStep("开始处理微信登录请求", map[string]string{"method": r.Method, "path": r.URL.Path})
+
 	if r.Method != http.MethodPost {
+		LogError("请求方法不支持", fmt.Errorf("期望POST方法，实际为%s", r.Method))
 		http.Error(w, "只支持POST请求", http.StatusMethodNotAllowed)
 		return
 	}
@@ -53,32 +56,41 @@ func WxLoginHandler(w http.ResponseWriter, r *http.Request) {
 	// 解析请求体
 	var req WxLoginRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		LogError("请求参数解析失败", err)
 		http.Error(w, "请求参数解析失败", http.StatusBadRequest)
 		return
 	}
+	LogRequest("POST", "/api/wx/login", req)
 
 	// 验证必要参数
 	if req.Code == "" {
+		LogError("缺少code参数", fmt.Errorf("code参数为空"))
 		http.Error(w, "缺少code参数", http.StatusBadRequest)
 		return
 	}
 
+	LogStep("开始调用微信API", map[string]string{"code": req.Code})
 	// 调用微信API获取用户信息
 	wxResp, err := getWxSession(req.Code)
 	if err != nil {
+		LogError("微信API调用失败", err)
 		http.Error(w, "微信API调用失败: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
+	LogStep("微信API调用成功", wxResp)
 
 	// 检查微信API返回错误
 	if wxResp.ErrCode != 0 {
+		LogError("微信API返回错误", fmt.Errorf("错误码: %d, 错误信息: %s", wxResp.ErrCode, wxResp.ErrMsg))
 		http.Error(w, "微信API错误: "+wxResp.ErrMsg, http.StatusBadRequest)
 		return
 	}
 
+	LogStep("开始处理用户登录", map[string]string{"openId": wxResp.OpenId})
 	// 处理用户登录
 	result, err := processUserLogin(wxResp, &req)
 	if err != nil {
+		LogError("用户登录处理失败", err)
 		http.Error(w, "用户登录处理失败: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -86,14 +98,17 @@ func WxLoginHandler(w http.ResponseWriter, r *http.Request) {
 	// 返回结果
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(result)
+	LogResponse(result, nil)
 }
 
 // getWxSession 调用微信API获取session_key和openid
 func getWxSession(code string) (*WxLoginResponse, error) {
+	LogStep("开始获取微信配置", nil)
 	// 获取微信配置
 	wxConfig := config.GetWxConfig()
 	appID := wxConfig.AppID
 	appSecret := wxConfig.AppSecret
+	LogStep("微信配置获取成功", map[string]string{"appID": appID})
 
 	// 构建请求URL
 	baseURL := "https://api.weixin.qq.com/sns/jscode2session"
@@ -103,33 +118,46 @@ func getWxSession(code string) (*WxLoginResponse, error) {
 	params.Add("js_code", code)
 	params.Add("grant_type", "authorization_code")
 
+	requestURL := baseURL + "?" + params.Encode()
+	LogStep("构建微信API请求", map[string]string{"url": requestURL})
+
 	// 发送HTTP请求
-	resp, err := http.Get(baseURL + "?" + params.Encode())
+	resp, err := http.Get(requestURL)
 	if err != nil {
+		LogError("微信API请求失败", err)
 		return nil, fmt.Errorf("微信API请求失败: %v", err)
 	}
 	defer resp.Body.Close()
+	LogStep("微信API请求发送成功", map[string]int{"status_code": resp.StatusCode})
 
 	// 读取响应
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
+		LogError("读取微信API响应失败", err)
 		return nil, fmt.Errorf("读取响应失败: %v", err)
 	}
+	LogStep("微信API响应读取成功", map[string]string{"response_body": string(body)})
 
 	// 解析响应
 	var wxResp WxLoginResponse
 	if err := json.Unmarshal(body, &wxResp); err != nil {
+		LogError("解析微信API响应失败", err)
 		return nil, fmt.Errorf("解析响应失败: %v", err)
 	}
+	LogStep("微信API响应解析成功", wxResp)
 
 	return &wxResp, nil
 }
 
 // processUserLogin 处理用户登录逻辑
 func processUserLogin(wxResp *WxLoginResponse, req *WxLoginRequest) (*WxLoginResult, error) {
+	LogStep("开始查询用户是否存在", map[string]string{"openId": wxResp.OpenId})
 	// 查询用户是否已存在
 	existingUser, err := dao.UserImp.GetUserByOpenId(wxResp.OpenId)
+	LogDBResult("查询", "users", existingUser, err)
+
 	if err != nil && err != gorm.ErrRecordNotFound {
+		LogError("查询用户失败", err)
 		return nil, fmt.Errorf("查询用户失败: %v", err)
 	}
 
@@ -137,6 +165,7 @@ func processUserLogin(wxResp *WxLoginResponse, req *WxLoginRequest) (*WxLoginRes
 	isNewUser := false
 
 	if err == gorm.ErrRecordNotFound {
+		LogStep("用户不存在，开始创建新用户", map[string]string{"openId": wxResp.OpenId})
 		// 新用户，创建用户记录
 		user = &model.UserModel{
 			OpenId:     wxResp.OpenId,
@@ -151,45 +180,64 @@ func processUserLogin(wxResp *WxLoginResponse, req *WxLoginRequest) (*WxLoginRes
 			Language:   req.Language,
 		}
 
+		LogDBOperation("创建", "users", user)
 		if err := dao.UserImp.CreateUser(user); err != nil {
+			LogError("创建用户失败", err)
 			return nil, fmt.Errorf("创建用户失败: %v", err)
 		}
+		LogDBResult("创建", "users", user, nil)
 		isNewUser = true
+		LogStep("新用户创建成功", map[string]interface{}{"userId": user.Id, "isNewUser": isNewUser})
 	} else {
+		LogStep("用户已存在，开始更新用户信息", map[string]interface{}{"userId": existingUser.Id, "openId": existingUser.OpenId})
 		// 老用户，更新登录时间和session_key
 		existingUser.SessionKey = wxResp.SessionKey
 		existingUser.LastLoginAt = time.Now()
 		existingUser.UpdatedAt = time.Now()
 
 		// 如果请求中包含用户信息，则更新
+		updateFields := make(map[string]interface{})
 		if req.NickName != "" {
 			existingUser.NickName = req.NickName
+			updateFields["nickName"] = req.NickName
 		}
 		if req.AvatarUrl != "" {
 			existingUser.AvatarUrl = req.AvatarUrl
+			updateFields["avatarUrl"] = req.AvatarUrl
 		}
 		if req.Gender != 0 {
 			existingUser.Gender = req.Gender
+			updateFields["gender"] = req.Gender
 		}
 		if req.Country != "" {
 			existingUser.Country = req.Country
+			updateFields["country"] = req.Country
 		}
 		if req.Province != "" {
 			existingUser.Province = req.Province
+			updateFields["province"] = req.Province
 		}
 		if req.City != "" {
 			existingUser.City = req.City
+			updateFields["city"] = req.City
 		}
 		if req.Language != "" {
 			existingUser.Language = req.Language
+			updateFields["language"] = req.Language
 		}
 
+		LogStep("准备更新用户字段", updateFields)
+		LogDBOperation("更新", "users", existingUser)
 		if err := dao.UserImp.UpdateUser(existingUser); err != nil {
+			LogError("更新用户失败", err)
 			return nil, fmt.Errorf("更新用户失败: %v", err)
 		}
+		LogDBResult("更新", "users", existingUser, nil)
 		user = existingUser
+		LogStep("用户信息更新成功", map[string]interface{}{"userId": user.Id, "isNewUser": isNewUser})
 	}
 
+	LogStep("开始构建返回数据", nil)
 	// 构建返回数据（不包含敏感信息如session_key）
 	userData := map[string]interface{}{
 		"id":          user.Id,
@@ -205,8 +253,10 @@ func processUserLogin(wxResp *WxLoginResponse, req *WxLoginRequest) (*WxLoginRes
 		"isNewUser":   isNewUser,
 	}
 
-	return &WxLoginResult{
+	result := &WxLoginResult{
 		Code: 0,
 		Data: userData,
-	}, nil
+	}
+	LogStep("登录处理完成", result)
+	return result, nil
 }
