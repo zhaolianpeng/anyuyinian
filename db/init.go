@@ -15,9 +15,15 @@ var dbInstance *gorm.DB
 func Init() error {
 
 	source := "%s:%s@tcp(%s)/%s?readTimeout=1500ms&writeTimeout=1500ms&charset=utf8&loc=Local&&parseTime=true"
+	/*
+		// 本地
+		user := "root"
+		pwd := "bU4X6cFW"
+		addr := "127.0.0.1:3306"
+	*/
 	user := "root"
 	pwd := "bU4X6cFW"
-	addr := "127.0.0.1:3306"
+	addr := "10.3.110.11:3306"
 	dataBase := "anyuyinian"
 	if dataBase == "" {
 		dataBase = "anyuyinian"
