@@ -1,14 +1,14 @@
 -- 创建配置表
 CREATE TABLE IF NOT EXISTS Configs (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    `key` VARCHAR(100) UNIQUE NOT NULL COMMENT '配置键',
+    config_key VARCHAR(100) UNIQUE NOT NULL COMMENT '配置键',
     value TEXT NOT NULL COMMENT '配置值',
     description VARCHAR(500) COMMENT '配置描述',
     type VARCHAR(20) DEFAULT 'string' COMMENT '配置类型：string, number, boolean, json',
     status INT DEFAULT 1 COMMENT '状态：1-启用，0-禁用',
     createdAt DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-    INDEX idx_key (key),
+    INDEX idx_key (config_key),
     INDEX idx_status (status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='平台配置表';
 
@@ -51,7 +51,7 @@ CREATE TABLE IF NOT EXISTS Patients (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='就诊人信息表';
 
 -- 插入示例配置数据
-INSERT INTO Configs (`key`, value, description, type, status) VALUES
+INSERT INTO Configs (config_key, value, description, type, status) VALUES
 ('customer_service_phone', '400-123-4567', '客服电话', 'string', 1),
 ('privacy_policy_url', 'https://example.com/privacy', '隐私政策链接', 'string', 1),
 ('user_agreement_url', 'https://example.com/agreement', '用户协议链接', 'string', 1),
@@ -60,4 +60,4 @@ INSERT INTO Configs (`key`, value, description, type, status) VALUES
 ('app_version', '1.0.0', '应用版本号', 'string', 1),
 ('force_update', 'false', '是否强制更新', 'boolean', 1),
 ('maintenance_mode', 'false', '是否维护模式', 'boolean', 1),
-('maintenance_message', '系统维护中，请稍后再试', '维护提示信息', 'string', 1); 
+('maintenance_message', '系统维护中，请稍后再试', 'string', 'string', 1);
