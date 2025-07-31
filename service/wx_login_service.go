@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 
 	"wxcloudrun-golang/config"
@@ -83,6 +84,41 @@ func WxLoginHandler(w http.ResponseWriter, r *http.Request) {
 	if wxResp.ErrCode != 0 {
 		LogError("微信API返回错误", fmt.Errorf("错误码: %d, 错误信息: %s", wxResp.ErrCode, wxResp.ErrMsg))
 		http.Error(w, "微信API错误: "+wxResp.ErrMsg, http.StatusBadRequest)
+		return
+	}
+
+	// 检查openId是否有效
+	if wxResp.OpenId == "" {
+		LogError("微信API返回的openId为空", fmt.Errorf("openId为空"))
+		http.Error(w, "微信API返回的openId为空", http.StatusBadRequest)
+		return
+	}
+
+	// 检查是否为模拟数据
+	if strings.HasPrefix(wxResp.OpenId, "user_") {
+		LogStep("检测到模拟openId，使用模拟数据", map[string]string{"openId": wxResp.OpenId})
+		// 对于模拟数据，直接返回成功响应
+		result := &WxLoginResult{
+			Code: 0,
+			Data: map[string]interface{}{
+				"id":          1,
+				"openId":      wxResp.OpenId,
+				"nickName":    req.NickName,
+				"avatarUrl":   req.AvatarUrl,
+				"gender":      req.Gender,
+				"country":     req.Country,
+				"province":    req.Province,
+				"city":        req.City,
+				"language":    req.Language,
+				"lastLoginAt": time.Now(),
+				"isNewUser":   false,
+				"token":       generateToken(1),
+				"userId":      1,
+			},
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(result)
+		LogResponse(result, nil)
 		return
 	}
 
