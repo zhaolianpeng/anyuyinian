@@ -13,8 +13,8 @@ type WxConfig struct {
 // GetWxConfig 获取微信配置
 func GetWxConfig() *WxConfig {
 	return &WxConfig{
-		AppID:     getEnv("WX_APP_ID", "your_app_id"),
-		AppSecret: getEnv("WX_APP_SECRET", "your_app_secret"),
+		AppID:     getEnv("WX_APP_ID", "wx101090677bd5219e"),
+		AppSecret: getEnv("WX_APP_SECRET", "042ff9921818ada9336df6e91fc2287e"),
 	}
 }
 
