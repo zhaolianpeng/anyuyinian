@@ -84,6 +84,31 @@ func GetUserInfoHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// 检查是否为模拟用户ID
+	if userId == 1 {
+		// 返回模拟用户信息
+		userInfo := &UserInfo{
+			Id:        1,
+			OpenId:    "user_1",
+			NickName:  "微信用户",
+			AvatarUrl: "https://thirdwx.qlogo.cn/mmopen/vi_32/POgEwh4mIHO4nibH0KlMECNjjGxQUq24ZEaGT4poC6icRiccVGKSyXwibcPq4BWmiaIGuG1icwxaQX6grC9VemZoJ8rg/132",
+			Gender:    0,
+			Phone:     "",
+			Country:   "China",
+			Province:  "Guangdong",
+			City:      "Shenzhen",
+			Language:  "zh_CN",
+		}
+
+		response := &UserResponse{
+			Code: 0,
+			Data: userInfo,
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(response)
+		return
+	}
+
 	// 获取用户信息
 	user, err := dao.UserImp.GetUserByOpenId(fmt.Sprintf("user_%d", userId)) // 这里简化处理
 	if err != nil {
