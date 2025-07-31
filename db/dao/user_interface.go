@@ -7,6 +7,7 @@ import (
 // UserInterface 用户数据模型接口
 type UserInterface interface {
 	GetUserByOpenId(openId string) (*model.UserModel, error)
+	GetUserById(id int32) (*model.UserModel, error)
 	CreateUser(user *model.UserModel) error
 	UpdateUser(user *model.UserModel) error
 	UpsertUser(user *model.UserModel) error

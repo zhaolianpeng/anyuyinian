@@ -2,9 +2,9 @@ package service
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"strconv"
+	"time"
 
 	"wxcloudrun-golang/db/dao"
 	"wxcloudrun-golang/db/model"
@@ -84,33 +84,8 @@ func GetUserInfoHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 检查是否为模拟用户ID
-	if userId == 1 {
-		// 返回模拟用户信息
-		userInfo := &UserInfo{
-			Id:        1,
-			OpenId:    "user_1",
-			NickName:  "微信用户",
-			AvatarUrl: "https://thirdwx.qlogo.cn/mmopen/vi_32/POgEwh4mIHO4nibH0KlMECNjjGxQUq24ZEaGT4poC6icRiccVGKSyXwibcPq4BWmiaIGuG1icwxaQX6grC9VemZoJ8rg/132",
-			Gender:    0,
-			Phone:     "",
-			Country:   "China",
-			Province:  "Guangdong",
-			City:      "Shenzhen",
-			Language:  "zh_CN",
-		}
-
-		response := &UserResponse{
-			Code: 0,
-			Data: userInfo,
-		}
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(response)
-		return
-	}
-
 	// 获取用户信息
-	user, err := dao.UserImp.GetUserByOpenId(fmt.Sprintf("user_%d", userId)) // 这里简化处理
+	user, err := dao.UserImp.GetUserById(int32(userId))
 	if err != nil {
 		response := &UserResponse{
 			Code:     -1,
@@ -127,7 +102,7 @@ func GetUserInfoHandler(w http.ResponseWriter, r *http.Request) {
 		NickName:  user.NickName,
 		AvatarUrl: user.AvatarUrl,
 		Gender:    user.Gender,
-		Phone:     "", // 这里需要从其他表获取手机号
+		Phone:     user.Phone, // 从用户表获取手机号
 		Country:   user.Country,
 		Province:  user.Province,
 		City:      user.City,
@@ -172,7 +147,32 @@ func BindPhoneHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 更新用户手机号（这里简化处理，实际应该更新用户表或创建手机号关联表）
+	// 获取用户信息
+	user, err := dao.UserImp.GetUserById(req.UserId)
+	if err != nil {
+		response := &UserResponse{
+			Code:     -1,
+			ErrorMsg: "用户不存在: " + err.Error(),
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(response)
+		return
+	}
+
+	// 更新用户手机号
+	user.Phone = req.Phone
+	user.UpdatedAt = time.Now()
+
+	if err := dao.UserImp.UpdateUser(user); err != nil {
+		response := &UserResponse{
+			Code:     -1,
+			ErrorMsg: "更新手机号失败: " + err.Error(),
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(response)
+		return
+	}
+
 	response := &UserResponse{
 		Code: 0,
 		Data: map[string]interface{}{

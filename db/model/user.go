@@ -10,6 +10,7 @@ type UserModel struct {
 	NickName    string    `gorm:"column:nickName" json:"nickName"`
 	AvatarUrl   string    `gorm:"column:avatarUrl" json:"avatarUrl"`
 	Gender      int       `gorm:"column:gender" json:"gender"`
+	Phone       string    `gorm:"column:phone" json:"phone"`
 	Country     string    `gorm:"column:country" json:"country"`
 	Province    string    `gorm:"column:province" json:"province"`
 	City        string    `gorm:"column:city" json:"city"`

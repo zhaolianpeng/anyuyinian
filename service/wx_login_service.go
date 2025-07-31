@@ -96,30 +96,9 @@ func WxLoginHandler(w http.ResponseWriter, r *http.Request) {
 
 	// 检查是否为模拟数据
 	if strings.HasPrefix(wxResp.OpenId, "user_") {
-		LogStep("检测到模拟openId，使用模拟数据", map[string]string{"openId": wxResp.OpenId})
-		// 对于模拟数据，直接返回成功响应
-		result := &WxLoginResult{
-			Code: 0,
-			Data: map[string]interface{}{
-				"id":          1,
-				"openId":      wxResp.OpenId,
-				"nickName":    req.NickName,
-				"avatarUrl":   req.AvatarUrl,
-				"gender":      req.Gender,
-				"country":     req.Country,
-				"province":    req.Province,
-				"city":        req.City,
-				"language":    req.Language,
-				"lastLoginAt": time.Now(),
-				"isNewUser":   false,
-				"token":       generateToken(1),
-				"userId":      1,
-			},
-		}
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(result)
-		LogResponse(result, nil)
-		return
+		LogStep("检测到模拟openId，创建模拟用户记录", map[string]string{"openId": wxResp.OpenId})
+		// 对于模拟数据，也创建真实的用户记录
+		// 这样可以确保用户信息能正确保存到数据库
 	}
 
 	LogStep("开始处理用户登录", map[string]string{"openId": wxResp.OpenId})
@@ -294,6 +273,7 @@ func processUserLogin(wxResp *WxLoginResponse, req *WxLoginRequest) (*WxLoginRes
 		"nickName":    user.NickName,
 		"avatarUrl":   user.AvatarUrl,
 		"gender":      user.Gender,
+		"phone":       user.Phone, // 添加手机号字段
 		"country":     user.Country,
 		"province":    user.Province,
 		"city":        user.City,

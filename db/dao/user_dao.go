@@ -16,6 +16,14 @@ func (imp *UserInterfaceImp) GetUserByOpenId(openId string) (*model.UserModel, e
 	return user, err
 }
 
+// GetUserById 根据用户ID查询用户
+func (imp *UserInterfaceImp) GetUserById(id int32) (*model.UserModel, error) {
+	var user = new(model.UserModel)
+	cli := db.Get()
+	err := cli.Table(userTableName).Where("id = ?", id).First(user).Error
+	return user, err
+}
+
 // CreateUser 创建用户
 func (imp *UserInterfaceImp) CreateUser(user *model.UserModel) error {
 	cli := db.Get()
