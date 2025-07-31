@@ -108,6 +108,19 @@ func getWxSession(code string) (*WxLoginResponse, error) {
 	wxConfig := config.GetWxConfig()
 	appID := wxConfig.AppID
 	appSecret := wxConfig.AppSecret
+
+	// 添加配置验证
+	if appID == "" || appSecret == "" {
+		LogError("微信配置为空", fmt.Errorf("AppID或AppSecret未配置"))
+		return nil, fmt.Errorf("微信配置未正确设置")
+	}
+
+	// 检查是否为默认配置
+	if appID == "your_app_id" || appSecret == "your_app_secret" {
+		LogError("微信配置为默认值", fmt.Errorf("请配置真实的微信AppID和AppSecret"))
+		return nil, fmt.Errorf("微信配置为默认值，请设置真实配置")
+	}
+
 	LogStep("微信配置获取成功", map[string]string{"appID": appID})
 
 	// 构建请求URL
@@ -251,6 +264,8 @@ func processUserLogin(wxResp *WxLoginResponse, req *WxLoginRequest) (*WxLoginRes
 		"language":    user.Language,
 		"lastLoginAt": user.LastLoginAt,
 		"isNewUser":   isNewUser,
+		"token":       generateToken(user.Id), // 添加token生成
+		"userId":      user.Id,                // 添加userId
 	}
 
 	result := &WxLoginResult{
@@ -259,4 +274,9 @@ func processUserLogin(wxResp *WxLoginResponse, req *WxLoginRequest) (*WxLoginRes
 	}
 	LogStep("登录处理完成", result)
 	return result, nil
+}
+
+// generateToken 生成简单的token
+func generateToken(userId int32) string {
+	return fmt.Sprintf("token_%d_%d", userId, time.Now().Unix())
 }
