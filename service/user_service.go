@@ -65,6 +65,80 @@ type PatientRequest struct {
 	IsDefault bool   `json:"isDefault"`
 }
 
+// PatientResponse 就诊人响应（包含计算出的年龄）
+type PatientResponse struct {
+	Id        int32     `json:"id"`
+	UserId    int32     `json:"userId"`
+	Name      string    `json:"name"`
+	IdCard    string    `json:"idCard"`
+	Phone     string    `json:"phone"`
+	Gender    int       `json:"gender"`
+	Birthday  string    `json:"birthday"`
+	Age       int       `json:"age"` // 根据身份证计算的年龄
+	Relation  string    `json:"relation"`
+	IsDefault int       `json:"isDefault"`
+	Status    int       `json:"status"`
+	CreatedAt time.Time `json:"createdAt"`
+	UpdatedAt time.Time `json:"updatedAt"`
+}
+
+// calculateAgeFromIdCard 根据身份证号计算年龄
+func calculateAgeFromIdCard(idCard string) int {
+	if len(idCard) != 18 {
+		return 0
+	}
+
+	// 提取出生日期（身份证第7-14位）
+	birthDateStr := idCard[6:14]
+	birthYear, _ := strconv.Atoi(birthDateStr[:4])
+	birthMonth, _ := strconv.Atoi(birthDateStr[4:6])
+	birthDay, _ := strconv.Atoi(birthDateStr[6:8])
+
+	// 获取当前日期
+	now := time.Now()
+	currentYear := now.Year()
+	currentMonth := int(now.Month())
+	currentDay := now.Day()
+
+	// 计算年龄
+	age := currentYear - birthYear
+
+	// 如果今年的生日还没到，年龄减1
+	if currentMonth < birthMonth || (currentMonth == birthMonth && currentDay < birthDay) {
+		age--
+	}
+
+	return age
+}
+
+// convertPatientToResponse 将PatientModel转换为PatientResponse
+func convertPatientToResponse(patient *model.PatientModel) *PatientResponse {
+	age := 0
+	if patient.IdCard != "" {
+		age = calculateAgeFromIdCard(patient.IdCard)
+		fmt.Printf("DEBUG: 患者 %s 身份证 %s 计算年龄 %d\n", patient.Name, patient.IdCard, age)
+	}
+
+	response := &PatientResponse{
+		Id:        patient.Id,
+		UserId:    patient.UserId,
+		Name:      patient.Name,
+		IdCard:    patient.IdCard,
+		Phone:     patient.Phone,
+		Gender:    patient.Gender,
+		Birthday:  patient.Birthday,
+		Age:       age,
+		Relation:  patient.Relation,
+		IsDefault: patient.IsDefault,
+		Status:    patient.Status,
+		CreatedAt: patient.CreatedAt,
+		UpdatedAt: patient.UpdatedAt,
+	}
+
+	fmt.Printf("DEBUG: 转换后的响应包含年龄字段: %+v\n", response)
+	return response
+}
+
 // GetUserInfoHandler 获取用户个人信息接口
 func GetUserInfoHandler(w http.ResponseWriter, r *http.Request) {
 	LogInfo("开始处理获取用户信息请求", map[string]interface{}{
@@ -554,9 +628,14 @@ func handleGetPatients(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var patientResponses []*PatientResponse
+	for _, patient := range patients {
+		patientResponses = append(patientResponses, convertPatientToResponse(patient))
+	}
+
 	response := &UserResponse{
 		Code: 0,
-		Data: patients,
+		Data: patientResponses,
 	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
@@ -602,7 +681,7 @@ func handleCreatePatient(w http.ResponseWriter, r *http.Request) {
 
 	response := &UserResponse{
 		Code: 0,
-		Data: patient,
+		Data: convertPatientToResponse(patient),
 	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
@@ -649,7 +728,7 @@ func handleUpdatePatient(w http.ResponseWriter, r *http.Request) {
 
 	response := &UserResponse{
 		Code: 0,
-		Data: patient,
+		Data: convertPatientToResponse(patient),
 	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)

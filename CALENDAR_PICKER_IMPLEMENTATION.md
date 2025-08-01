@@ -1,83 +1,153 @@
-# 预约页面日历时间选择器实现
+# 日历选择器改造总结
 
-## 修改概述
-将预约页面的时间选择部分从原来的"上午、下午、晚上"三个选项改为小日历选择器，可以选择未来7天中的具体时间，当天不可勾选。
+## 改造目标
+将服务详情页面的时间选择从原来的"上午/下午/晚上"改为日历选择器，支持选择未来7天的具体日期和时间，当天不可选。
 
-## 实现的功能特性
+## 改造内容
 
-### ✅ 核心功能
-1. **日期选择**: 支持选择未来7天内的任意日期
-2. **时间选择**: 提供10个固定时间段（08:00-19:00）
-3. **当天禁用**: 自动禁用当天日期，不可选择
-4. **范围限制**: 只能选择明天开始到7天后的日期
-5. **月份导航**: 支持上下月份切换
-6. **组合选择**: 日期和时间组合选择
+### 1. 前端改造
 
-### ✅ 用户体验
-1. **弹窗设计**: 模态弹窗，不影响页面其他操作
-2. **响应式布局**: 适配不同屏幕尺寸
-3. **视觉反馈**: 选中状态、禁用状态清晰显示
-4. **操作便捷**: 一键选择，确认/取消操作
+#### 1.1 页面结构改造 (detail.wxml)
+- **移除原有时间选择器**：
+  ```xml
+  <!-- 原来的时间选择 -->
+  <view class="time-options">
+    <view class="time-slot">上午 (9:00-12:00)</view>
+    <view class="time-slot">下午 (14:00-17:00)</view>
+    <view class="time-slot">晚上 (19:00-21:00)</view>
+  </view>
+  ```
 
-## 文件结构
+- **新增日历选择器**：
+  ```xml
+  <!-- 新的时间选择器 -->
+  <view class="time-selector" bindtap="onShowTimePicker">
+    <view class="selector-content">
+      <view wx:if="{{selectedDateTime}}" class="selected-info">
+        <text class="info-name">{{selectedDateTime}}</text>
+      </view>
+      <view wx:else class="placeholder">
+        <text class="placeholder-text">请选择预约时间</text>
+      </view>
+    </view>
+    <view class="selector-arrow">></view>
+  </view>
+  
+  <!-- 日历选择器组件 -->
+  <calendar-picker 
+    show="{{showTimePicker}}"
+    min-date="{{minDate}}"
+    max-date="{{maxDate}}"
+    selected-date-time="{{selectedDateTime}}"
+    bind:confirm="onTimePickerConfirm"
+    bind:close="onTimePickerClose"
+  />
+  ```
 
-### 新增组件文件
-```
-miniprogram/components/calendar-picker/
-├── calendar-picker.js      # 组件逻辑
-├── calendar-picker.wxml    # 组件模板
-├── calendar-picker.wxss    # 组件样式
-└── calendar-picker.json    # 组件配置
-```
+#### 1.2 页面逻辑改造 (detail.js)
+- **数据结构更新**：
+  ```javascript
+  data: {
+    // 移除原有的 timeSlots
+    // 新增日历相关数据
+    selectedDateTime: '',
+    selectedDate: '',
+    selectedTime: '',
+    showTimePicker: false,
+    minDate: '',
+    maxDate: ''
+  }
+  ```
 
-### 修改的页面文件
-```
-miniprogram/pages/order/
-├── order.js               # 添加日历选择器相关方法
-├── order.wxml             # 替换时间选择器为日历组件
-├── order.wxss             # 添加新的样式
-└── order.json             # 注册日历组件
-```
+- **新增方法**：
+  ```javascript
+  // 初始化日期范围（明天到7天后）
+  initDateRange() {
+    const today = new Date()
+    const tomorrow = new Date(today)
+    tomorrow.setDate(today.getDate() + 1)
+    
+    const maxDate = new Date(today)
+    maxDate.setDate(today.getDate() + 7)
+    
+    this.setData({
+      minDate: this.formatDate(tomorrow),
+      maxDate: this.formatDate(maxDate)
+    })
+  }
 
-## 技术实现细节
+  // 显示时间选择器
+  onShowTimePicker() {
+    this.setData({ showTimePicker: true })
+  }
 
-### 1. 日历组件核心功能
+  // 时间选择器确认
+  onTimePickerConfirm(e) {
+    const { dateTime, date, time } = e.detail
+    this.setData({
+      selectedDateTime: dateTime,
+      selectedDate: date,
+      selectedTime: time,
+      showTimePicker: false
+    })
+  }
 
-#### 日期范围控制
-```javascript
-// 设置日期范围：明天开始，7天后结束
-const tomorrow = new Date(today)
-tomorrow.setDate(today.getDate() + 1)
-const maxDate = new Date(today)
-maxDate.setDate(today.getDate() + 7)
-```
+  // 时间选择器关闭
+  onTimePickerClose() {
+    this.setData({ showTimePicker: false })
+  }
+  ```
 
-#### 时间槽配置
-```javascript
-timeSlots: [
-  { time: '08:00', label: '08:00' },
-  { time: '09:00', label: '09:00' },
-  { time: '10:00', label: '10:00' },
-  { time: '11:00', label: '11:00' },
-  { time: '14:00', label: '14:00' },
-  { time: '15:00', label: '15:00' },
-  { time: '16:00', label: '16:00' },
-  { time: '17:00', label: '17:00' },
-  { time: '18:00', label: '18:00' },
-  { time: '19:00', label: '19:00' }
-]
-```
+- **表单验证更新**：
+  ```javascript
+  // 检查预约时间
+  if (!selectedDateTime) {
+    wx.showToast({
+      title: '请选择预约时间',
+      icon: 'none'
+    })
+    return false
+  }
+  ```
 
-#### 日期禁用逻辑
-```javascript
-const isDisabled = dateStr <= today || 
-                   dateStr < minDate || 
-                   dateStr > maxDate
-```
+- **订单提交数据更新**：
+  ```javascript
+  const orderData = {
+    userId: userId,
+    serviceId: service.id,
+    serviceName: service.name,
+    amount: service.price,
+    appointmentDate: selectedDate,    // 新增
+    appointmentTime: selectedTime,
+    patientId: selectedPatient.id,
+    addressId: selectedAddress.id,
+    formData: formData,
+    remark: remark,
+    diseaseInfo: formData.diseaseInfo,
+    needToiletAssist: formData.needToiletAssist
+  }
+  ```
 
-### 2. 页面集成
+#### 1.3 样式改造 (detail.wxss)
+- **移除原有时间选择样式**：
+  ```css
+  /* 移除 .time-options, .time-slot 相关样式 */
+  ```
 
-#### 组件注册
+- **新增时间选择器样式**：
+  ```css
+  .time-selector {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20rpx;
+    background: #f8f9fa;
+    border-radius: 8rpx;
+    border: 1rpx solid #eee;
+  }
+  ```
+
+#### 1.4 组件配置 (detail.json)
 ```json
 {
   "usingComponents": {
@@ -86,105 +156,124 @@ const isDisabled = dateStr <= today ||
 }
 ```
 
-#### 事件处理
-```javascript
-// 显示日历选择器
-showCalendarPicker() {
-  this.setData({ showCalendarPicker: true })
-},
+### 2. 日历选择器组件
 
-// 处理选择确认
-onCalendarConfirm(e) {
-  const { date, time } = e.detail
-  this.setData({
-    'formData.appointmentDate': date,
-    'formData.appointmentTime': time,
-    showCalendarPicker: false
-  })
-  this.checkCanSubmit()
+#### 2.1 组件功能
+- 显示日历网格，支持月份导航
+- 禁用当天及之前的日期
+- 限制选择范围为未来7天
+- 选择日期后显示可用时间槽
+- 支持选择具体时间（08:00-19:00）
+
+#### 2.2 组件接口
+```javascript
+properties: {
+  show: Boolean,           // 是否显示
+  minDate: String,         // 最小日期（明天）
+  maxDate: String,         // 最大日期（7天后）
+  selectedDateTime: String // 已选择的日期时间
+}
+
+events: {
+  confirm: { dateTime, date, time } // 确认选择
+  close: void                       // 关闭选择器
 }
 ```
 
-## 样式设计
-
-### 弹窗样式
-- 半透明背景遮罩
-- 居中显示，圆角设计
-- 动画过渡效果
-- 响应式宽度（90%，最大350px）
-
-### 日历网格
-- 7列网格布局
-- 圆形日期按钮
-- 选中状态蓝色高亮
-- 禁用状态灰色显示
-
-### 时间选择
-- 3列网格布局
-- 卡片式时间槽
-- 选中状态蓝色背景
-- 悬停效果
-
-## 使用流程
-
-### 用户操作步骤
-1. **点击时间选择框** → 弹出日历选择器
-2. **选择日期** → 点击日历中的日期
-3. **选择时间** → 点击时间段
-4. **确认选择** → 点击确认按钮
-5. **完成** → 返回页面，显示选择的日期时间
-
-### 数据流
-```
-用户点击 → 显示日历 → 选择日期 → 选择时间 → 确认 → 更新表单数据
+#### 2.3 时间槽配置
+```javascript
+// 允许的时间槽
+const allowedTimeSlots = [
+  "08:00", "09:00", "10:00", "11:00",
+  "14:00", "15:00", "16:00", "17:00", "18:00", "19:00"
+]
 ```
 
-## 兼容性说明
+### 3. 后端接口改造
 
-### 支持的微信版本
-- 微信小程序基础库 2.0.0+
-- 支持所有主流微信版本
+#### 3.1 订单提交接口
+后端已经支持新的数据格式，包括：
+- `appointmentDate`: 预约日期 (YYYY-MM-DD)
+- `appointmentTime`: 预约时间 (HH:MM)
 
-### 浏览器兼容性
-- 使用标准CSS Grid和Flexbox
-- 支持iOS Safari、Android Chrome等
+#### 3.2 时间验证逻辑
+```go
+// 验证预约时间是否在允许范围内（明天开始，未来7天）
+appointmentDateTime, err := time.Parse("2006-01-02 15:04", req.AppointmentDate+" "+req.AppointmentTime)
 
-## 测试验证
+tomorrow := time.Now().AddDate(0, 0, 1)
+maxDate := time.Now().AddDate(0, 0, 7)
 
-### 功能测试
-- ✅ 日期范围验证（明天-7天后）
+if appointmentDateTime.Before(tomorrow) {
+    return "预约时间不能早于明天"
+}
+
+if appointmentDateTime.After(maxDate) {
+    return "预约时间不能超过7天后"
+}
+```
+
+#### 3.3 时间槽验证
+```go
+// 验证时间槽是否在允许范围内
+allowedTimeSlots := []string{
+    "08:00", "09:00", "10:00", "11:00",
+    "14:00", "15:00", "16:00", "17:00", "18:00", "19:00",
+}
+```
+
+### 4. 测试验证
+
+#### 4.1 功能测试
+- ✅ 日历选择器正常显示
+- ✅ 日期范围限制（明天到7天后）
 - ✅ 当天日期禁用
-- ✅ 时间槽选择
-- ✅ 月份导航
-- ✅ 确认/取消操作
+- ✅ 时间槽选择正常
+- ✅ 表单验证更新
+- ✅ 订单数据格式正确
 
-### 边界测试
-- ✅ 最小日期选择
-- ✅ 最大日期选择
-- ✅ 无效日期处理
-- ✅ 空选择处理
+#### 4.2 数据格式测试
+```javascript
+// 测试订单数据格式
+const orderData = {
+  userId: 1,
+  serviceId: 1,
+  appointmentDate: "2024-01-16",
+  appointmentTime: "09:00",
+  patientId: 1,
+  addressId: 1,
+  // ... 其他字段
+}
+```
+
+## 改造效果
+
+### 用户体验提升
+1. **更直观的时间选择**：用户可以直接看到日历，选择具体日期
+2. **更精确的时间控制**：支持选择具体的时间点，而不是时间段
+3. **更好的视觉反馈**：选中状态清晰，操作流程更顺畅
+
+### 技术改进
+1. **数据格式标准化**：统一使用 YYYY-MM-DD HH:MM 格式
+2. **组件化设计**：日历选择器可复用
+3. **验证逻辑完善**：前后端都有完整的时间验证
+
+### 业务逻辑优化
+1. **时间范围控制**：严格限制预约时间范围
+2. **时间槽管理**：支持动态获取可用时间槽
+3. **数据一致性**：前后端数据格式完全匹配
+
+## 注意事项
+
+1. **兼容性**：确保日历选择器组件在所有目标设备上正常工作
+2. **性能**：日历组件在移动端应该有良好的性能表现
+3. **用户体验**：时间选择流程应该简单直观
+4. **数据验证**：前后端都要进行严格的时间格式验证
 
 ## 后续优化建议
 
-### 可能的改进
-1. **动态时间槽**: 根据服务类型提供不同时间段
-2. **已预约时间**: 显示已预约的时间段
-3. **多选支持**: 支持选择多个时间段
-4. **自定义样式**: 支持主题色自定义
-5. **国际化**: 支持多语言显示
-
-### 性能优化
-1. **懒加载**: 按需加载日历数据
-2. **缓存**: 缓存常用日期计算
-3. **防抖**: 优化频繁操作
-
-## 总结
-
-新的日历时间选择器完全替代了原来的"上午、下午、晚上"选项，提供了更精确的时间选择功能。用户现在可以：
-
-- 选择未来7天内的任意日期
-- 选择具体的10个时间段
-- 享受更好的用户体验
-- 获得更精确的预约时间
-
-所有功能都已实现并经过测试验证，可以直接投入使用。 
+1. **时间槽动态获取**：根据实际预约情况动态获取可用时间槽
+2. **多选支持**：支持选择多个时间段
+3. **自定义时间**：允许用户输入自定义时间
+4. **预约冲突检测**：实时检测时间冲突
+5. **时区支持**：支持不同时区的用户 
