@@ -143,10 +143,32 @@ func SubmitOrderHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// 验证时间槽是否在允许范围内
+	allowedTimeSlots := []string{
+		"08:00", "09:00", "10:00", "11:00",
+		"14:00", "15:00", "16:00", "17:00", "18:00", "19:00",
+	}
+
+	isValidTimeSlot := false
+	for _, slot := range allowedTimeSlots {
+		if req.AppointmentTime == slot {
+			isValidTimeSlot = true
+			break
+		}
+	}
+
+	if !isValidTimeSlot {
+		LogError("预约时间不在允许的时间段内", fmt.Errorf("appointmentTime=%s, allowedSlots=%v", req.AppointmentTime, allowedTimeSlots))
+		http.Error(w, "预约时间不在允许的时间段内", http.StatusBadRequest)
+		return
+	}
+
 	LogStep("预约时间验证通过", map[string]interface{}{
 		"appointmentDateTime": appointmentDateTime,
 		"tomorrow":            tomorrow,
 		"maxDate":             maxDate,
+		"appointmentTime":     req.AppointmentTime,
+		"allowedTimeSlots":    allowedTimeSlots,
 	})
 
 	// 获取服务信息
@@ -727,20 +749,115 @@ func generateTransactionId() string {
 // 生成微信支付参数
 func generateWechatPayParams(order *model.OrderModel, payMethod string) (map[string]interface{}, error) {
 	// 这里应该调用微信支付API生成支付参数
-	// 由于这是示例代码，我们返回模拟的支付参数
-
-	now := time.Now()
-	timeStamp := strconv.FormatInt(now.Unix(), 10)
-	nonceStr := fmt.Sprintf("wxpay_%d", rand.Intn(999999))
-
-	// 构建支付参数
-	paymentParams := map[string]interface{}{
-		"timeStamp": timeStamp,
-		"nonceStr":  nonceStr,
-		"package":   fmt.Sprintf("prepay_id=wx_%d", rand.Intn(999999)),
+	// 目前返回模拟数据
+	return map[string]interface{}{
+		"timeStamp": strconv.FormatInt(time.Now().Unix(), 10),
+		"nonceStr":  generateTransactionId(),
+		"package":   "prepay_id=wx" + generateTransactionId(),
 		"signType":  "MD5",
-		"paySign":   fmt.Sprintf("pay_sign_%d", rand.Intn(999999)),
+		"paySign":   "mock_pay_sign_" + generateTransactionId(),
+	}, nil
+}
+
+// GetAvailableTimeSlotsRequest 获取可用时间槽请求
+type GetAvailableTimeSlotsRequest struct {
+	Date string `json:"date"` // 日期格式：YYYY-MM-DD
+}
+
+// GetAvailableTimeSlotsResponse 获取可用时间槽响应
+type GetAvailableTimeSlotsResponse struct {
+	Date      string   `json:"date"`
+	TimeSlots []string `json:"timeSlots"`
+}
+
+// GetAvailableTimeSlotsHandler 获取可用时间槽接口
+func GetAvailableTimeSlotsHandler(w http.ResponseWriter, r *http.Request) {
+	LogInfo("开始处理获取可用时间槽请求", map[string]interface{}{
+		"method": r.Method,
+		"path":   r.URL.Path,
+	})
+
+	if r.Method != http.MethodPost {
+		LogError("请求方法不支持", fmt.Errorf("期望POST方法，实际为%s", r.Method))
+		http.Error(w, "只支持POST请求", http.StatusMethodNotAllowed)
+		return
 	}
 
-	return paymentParams, nil
+	var req GetAvailableTimeSlotsRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		LogError("请求参数解析失败", err)
+		http.Error(w, "请求参数解析失败", http.StatusBadRequest)
+		return
+	}
+
+	LogStep("解析获取可用时间槽请求参数", map[string]interface{}{
+		"date": req.Date,
+	})
+
+	// 验证日期格式
+	if req.Date == "" {
+		LogError("缺少日期参数", fmt.Errorf("date=%s", req.Date))
+		http.Error(w, "请提供日期参数", http.StatusBadRequest)
+		return
+	}
+
+	// 解析日期
+	requestDate, err := time.Parse("2006-01-02", req.Date)
+	if err != nil {
+		LogError("日期格式错误", err)
+		http.Error(w, "日期格式错误，请使用YYYY-MM-DD格式", http.StatusBadRequest)
+		return
+	}
+
+	// 验证日期范围（明天开始，未来7天）
+	tomorrow := time.Now().AddDate(0, 0, 1)
+	tomorrow = time.Date(tomorrow.Year(), tomorrow.Month(), tomorrow.Day(), 0, 0, 0, 0, tomorrow.Location())
+
+	maxDate := time.Now().AddDate(0, 0, 7)
+	maxDate = time.Date(maxDate.Year(), maxDate.Month(), maxDate.Day(), 23, 59, 59, 0, maxDate.Location())
+
+	requestDateTime := time.Date(requestDate.Year(), requestDate.Month(), requestDate.Day(), 0, 0, 0, 0, requestDate.Location())
+
+	if requestDateTime.Before(tomorrow) {
+		LogError("请求日期过早", fmt.Errorf("requestDate=%v, tomorrow=%v", requestDateTime, tomorrow))
+		http.Error(w, "只能查询明天开始的日期", http.StatusBadRequest)
+		return
+	}
+
+	if requestDateTime.After(maxDate) {
+		LogError("请求日期过晚", fmt.Errorf("requestDate=%v, maxDate=%v", requestDateTime, maxDate))
+		http.Error(w, "只能查询7天内的日期", http.StatusBadRequest)
+		return
+	}
+
+	// 定义允许的时间槽
+	allowedTimeSlots := []string{
+		"08:00", "09:00", "10:00", "11:00",
+		"14:00", "15:00", "16:00", "17:00", "18:00", "19:00",
+	}
+
+	// TODO: 这里可以添加业务逻辑来检查哪些时间段已被预约
+	// 例如：查询数据库中该日期的已预约时间段，然后从允许的时间槽中排除
+	// 目前返回所有允许的时间槽
+
+	LogStep("获取可用时间槽成功", map[string]interface{}{
+		"date":      req.Date,
+		"timeSlots": allowedTimeSlots,
+	})
+
+	response := &OrderResponse{
+		Code: 0,
+		Data: &GetAvailableTimeSlotsResponse{
+			Date:      req.Date,
+			TimeSlots: allowedTimeSlots,
+		},
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+
+	LogInfo("获取可用时间槽成功", map[string]interface{}{
+		"date":      req.Date,
+		"timeSlots": allowedTimeSlots,
+	})
 }
