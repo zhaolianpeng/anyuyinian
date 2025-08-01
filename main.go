@@ -51,7 +51,7 @@ func main() {
 	http.HandleFunc("/api/order/cancel/", service.NewLogMiddleware(service.CancelOrderHandler))
 	http.HandleFunc("/api/order/refund/", service.NewLogMiddleware(service.RefundOrderHandler))
 	http.HandleFunc("/api/order/list", service.NewLogMiddleware(service.OrderListHandler))
-	http.HandleFunc("/api/order/detail/", service.NewLogMiddleware(service.OrderDetailHandler))
+	http.HandleFunc("/api/order/detail", service.NewLogMiddleware(service.OrderDetailHandler))
 	http.HandleFunc("/api/order/time_slots", service.NewLogMiddleware(service.GetAvailableTimeSlotsHandler))
 
 	// 推荐相关接口

@@ -62,13 +62,33 @@ type OrderListRequest struct {
 	PageSize int   `json:"pageSize"`
 }
 
+// OrderListItem 订单列表项（增强版）
+type OrderListItem struct {
+	Id              int32     `json:"id"`
+	OrderNo         string    `json:"orderNo"`
+	ServiceName     string    `json:"serviceName"`     // 服务名称
+	ServiceTitle    string    `json:"serviceTitle"`    // 服务标题
+	AppointmentDate string    `json:"appointmentDate"` // 预约日期
+	AppointmentTime string    `json:"appointmentTime"` // 预约时间
+	ConsultTime     string    `json:"consultTime"`     // 服务沟通时间（从formData中提取）
+	TotalAmount     float64   `json:"totalAmount"`     // 订单金额
+	Status          int       `json:"status"`          // 订单状态
+	PayStatus       int       `json:"payStatus"`       // 支付状态
+	CreatedAt       time.Time `json:"createdAt"`       // 创建时间
+	StatusText      string    `json:"statusText"`      // 状态文本
+	PayStatusText   string    `json:"payStatusText"`   // 支付状态文本
+	FormattedAmount string    `json:"formattedAmount"` // 格式化金额
+	FormattedDate   string    `json:"formattedDate"`   // 格式化日期
+	Amount          float64   `json:"amount"`          // 兼容字段
+}
+
 // OrderListResponse 订单列表响应
 type OrderListResponse struct {
-	List     []*model.OrderModel `json:"list"`
-	Total    int64               `json:"total"`
-	Page     int                 `json:"page"`
-	PageSize int                 `json:"pageSize"`
-	HasMore  bool                `json:"hasMore"`
+	List     []*OrderListItem `json:"list"`
+	Total    int64            `json:"total"`
+	Page     int              `json:"page"`
+	PageSize int              `json:"pageSize"`
+	HasMore  bool             `json:"hasMore"`
 }
 
 // SubmitOrderHandler 提交订单接口
@@ -290,7 +310,7 @@ func SubmitOrderHandler(w http.ResponseWriter, r *http.Request) {
 		Data: map[string]interface{}{
 			"orderId":     order.Id,
 			"orderNo":     order.OrderNo,
-			"totalAmount": order.TotalAmount,
+			"totalAmount": totalAmount, // 使用计算出的金额，而不是order.TotalAmount
 		},
 	}
 	w.Header().Set("Content-Type", "application/json")
@@ -676,13 +696,73 @@ func OrderListHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// 转换为增强的订单列表项
+	var orderList []*OrderListItem
+	for _, order := range orders {
+		// 从formData中提取咨询时间
+		consultTime := ""
+		if order.FormData != "" {
+			var formData map[string]interface{}
+			if err := json.Unmarshal([]byte(order.FormData), &formData); err == nil {
+				if ct, ok := formData["consultTime"].(string); ok {
+					consultTime = ct
+				}
+			}
+		}
+
+		// 状态文本映射
+		statusText := "待支付"
+		switch order.Status {
+		case 1:
+			statusText = "已支付"
+		case 2:
+			statusText = "已完成"
+		case 3:
+			statusText = "已取消"
+		case 4:
+			statusText = "已退款"
+		}
+
+		// 支付状态文本映射
+		payStatusText := "未支付"
+		if order.PayStatus == 1 {
+			payStatusText = "已支付"
+		}
+
+		// 格式化金额
+		formattedAmount := fmt.Sprintf("¥%.2f", order.TotalAmount)
+
+		// 格式化日期
+		formattedDate := order.CreatedAt.Format("2006-01-02 15:04")
+
+		orderItem := &OrderListItem{
+			Id:              order.Id,
+			OrderNo:         order.OrderNo,
+			ServiceName:     order.ServiceName,
+			ServiceTitle:    order.ServiceName, // 使用服务名称作为标题
+			AppointmentDate: order.AppointmentDate,
+			AppointmentTime: order.AppointmentTime,
+			ConsultTime:     consultTime,
+			TotalAmount:     order.TotalAmount,
+			Amount:          order.TotalAmount, // 兼容字段
+			Status:          order.Status,
+			PayStatus:       order.PayStatus,
+			CreatedAt:       order.CreatedAt,
+			StatusText:      statusText,
+			PayStatusText:   payStatusText,
+			FormattedAmount: formattedAmount,
+			FormattedDate:   formattedDate,
+		}
+		orderList = append(orderList, orderItem)
+	}
+
 	// 计算是否有更多数据
 	hasMore := int64(page*pageSize) < total
 
 	response := &OrderResponse{
 		Code: 0,
 		Data: &OrderListResponse{
-			List:     orders,
+			List:     orderList,
 			Total:    total,
 			Page:     page,
 			PageSize: pageSize,
@@ -694,29 +774,39 @@ func OrderListHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // OrderDetailHandler 获取订单详情接口
+// OrderDetailRequest 订单详情请求
+type OrderDetailRequest struct {
+	OrderNo string `json:"orderNo"` // 订单号
+}
+
 func OrderDetailHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		http.Error(w, "只支持GET请求", http.StatusMethodNotAllowed)
+	if r.Method != http.MethodPost {
+		http.Error(w, "只支持POST请求", http.StatusMethodNotAllowed)
 		return
 	}
 
-	// 从URL路径中获取订单ID
-	pathParts := strings.Split(r.URL.Path, "/")
-	if len(pathParts) < 4 {
-		http.Error(w, "缺少订单ID参数", http.StatusBadRequest)
+	var req OrderDetailRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		LogError("请求参数解析失败", err)
+		http.Error(w, "请求参数解析失败", http.StatusBadRequest)
 		return
 	}
 
-	orderIdStr := pathParts[3]
-	orderId, err := strconv.Atoi(orderIdStr)
+	LogStep("解析订单详情请求参数", map[string]interface{}{
+		"orderNo": req.OrderNo,
+	})
+
+	// 验证订单号
+	if req.OrderNo == "" {
+		LogError("缺少订单号", fmt.Errorf("orderNo is empty"))
+		http.Error(w, "缺少订单号", http.StatusBadRequest)
+		return
+	}
+
+	// 按订单号查询订单详情
+	order, err := dao.OrderImp.GetOrderByOrderNo(req.OrderNo)
 	if err != nil {
-		http.Error(w, "无效的订单ID", http.StatusBadRequest)
-		return
-	}
-
-	// 获取订单详情
-	order, err := dao.OrderImp.GetOrderById(int32(orderId))
-	if err != nil {
+		LogError("获取订单详情失败", err)
 		response := &OrderResponse{
 			Code:     -1,
 			ErrorMsg: "获取订单详情失败: " + err.Error(),
@@ -725,6 +815,13 @@ func OrderDetailHandler(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(response)
 		return
 	}
+
+	LogStep("订单详情查询成功", map[string]interface{}{
+		"orderId":     order.Id,
+		"orderNo":     order.OrderNo,
+		"serviceName": order.ServiceName,
+		"totalAmount": order.TotalAmount,
+	})
 
 	response := &OrderResponse{
 		Code: 0,
