@@ -22,16 +22,18 @@ type OrderResponse struct {
 
 // SubmitOrderRequest 提交订单请求
 type SubmitOrderRequest struct {
-	UserId          int32                  `json:"userId"`
-	ServiceId       int32                  `json:"serviceId"`
-	PatientId       int32                  `json:"patientId"`       // 就诊人ID
-	AddressId       int32                  `json:"addressId"`       // 地址ID
-	AppointmentDate string                 `json:"appointmentDate"` // 预约日期
-	AppointmentTime string                 `json:"appointmentTime"` // 预约时间
-	Quantity        int                    `json:"quantity"`
-	FormData        map[string]interface{} `json:"formData"`
-	ReferrerId      int32                  `json:"referrerId,omitempty"`
-	Remark          string                 `json:"remark"`
+	UserId           int32                  `json:"userId"`
+	ServiceId        int32                  `json:"serviceId"`
+	PatientId        int32                  `json:"patientId"`       // 就诊人ID
+	AddressId        int32                  `json:"addressId"`       // 地址ID
+	AppointmentDate  string                 `json:"appointmentDate"` // 预约日期
+	AppointmentTime  string                 `json:"appointmentTime"` // 预约时间
+	Quantity         int                    `json:"quantity"`
+	FormData         map[string]interface{} `json:"formData"`
+	ReferrerId       int32                  `json:"referrerId,omitempty"`
+	Remark           string                 `json:"remark"`
+	DiseaseInfo      string                 `json:"diseaseInfo"`      // 基础病信息
+	NeedToiletAssist string                 `json:"needToiletAssist"` // 是否需要助排二便
 }
 
 // PayOrderRequest 支付订单请求
@@ -210,24 +212,32 @@ func SubmitOrderHandler(w http.ResponseWriter, r *http.Request) {
 		"totalAmount":     totalAmount,
 	})
 
+	// 转换助排二便字段
+	needToiletAssist := 0
+	if req.NeedToiletAssist == "1" {
+		needToiletAssist = 1
+	}
+
 	order := &model.OrderModel{
-		OrderNo:         orderNo,
-		UserId:          req.UserId,
-		ServiceId:       req.ServiceId,
-		PatientId:       req.PatientId,
-		AddressId:       req.AddressId,
-		AppointmentDate: req.AppointmentDate,
-		AppointmentTime: req.AppointmentTime,
-		ServiceName:     service.Name,
-		Price:           service.Price,
-		Quantity:        req.Quantity,
-		TotalAmount:     totalAmount,
-		FormData:        string(formDataJson),
-		Status:          0, // 待支付
-		PayStatus:       0, // 未支付
-		ReferrerId:      req.ReferrerId,
-		Commission:      commission,
-		Remark:          req.Remark,
+		OrderNo:          orderNo,
+		UserId:           req.UserId,
+		ServiceId:        req.ServiceId,
+		PatientId:        req.PatientId,
+		AddressId:        req.AddressId,
+		AppointmentDate:  req.AppointmentDate,
+		AppointmentTime:  req.AppointmentTime,
+		DiseaseInfo:      req.DiseaseInfo,
+		NeedToiletAssist: needToiletAssist,
+		ServiceName:      service.Name,
+		Price:            service.Price,
+		Quantity:         req.Quantity,
+		TotalAmount:      totalAmount,
+		FormData:         string(formDataJson),
+		Status:           0, // 待支付
+		PayStatus:        0, // 未支付
+		ReferrerId:       req.ReferrerId,
+		Commission:       commission,
+		Remark:           req.Remark,
 	}
 
 	LogStep("开始保存订单到数据库", map[string]interface{}{
