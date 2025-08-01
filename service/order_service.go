@@ -71,6 +71,7 @@ type OrderListItem struct {
 	AppointmentDate string    `json:"appointmentDate"` // 预约日期
 	AppointmentTime string    `json:"appointmentTime"` // 预约时间
 	ConsultTime     string    `json:"consultTime"`     // 服务沟通时间（从formData中提取）
+	Price           float64   `json:"price"`           // 服务单价
 	TotalAmount     float64   `json:"totalAmount"`     // 订单金额
 	Status          int       `json:"status"`          // 订单状态
 	PayStatus       int       `json:"payStatus"`       // 支付状态
@@ -735,6 +736,15 @@ func OrderListHandler(w http.ResponseWriter, r *http.Request) {
 		// 格式化日期
 		formattedDate := order.CreatedAt.Format("2006-01-02 15:04")
 
+		// 添加调试日志
+		LogStep("处理订单列表项", map[string]interface{}{
+			"orderId":     order.Id,
+			"orderNo":     order.OrderNo,
+			"totalAmount": order.TotalAmount,
+			"price":       order.Price,
+			"quantity":    order.Quantity,
+		})
+
 		orderItem := &OrderListItem{
 			Id:              order.Id,
 			OrderNo:         order.OrderNo,
@@ -743,6 +753,7 @@ func OrderListHandler(w http.ResponseWriter, r *http.Request) {
 			AppointmentDate: order.AppointmentDate,
 			AppointmentTime: order.AppointmentTime,
 			ConsultTime:     consultTime,
+			Price:           order.Price, // 添加价格字段
 			TotalAmount:     order.TotalAmount,
 			Amount:          order.TotalAmount, // 兼容字段
 			Status:          order.Status,
