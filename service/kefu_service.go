@@ -2,6 +2,7 @@ package service
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -36,27 +37,52 @@ type FaqListResponse struct {
 
 // SendMessageHandler 提交用户咨询问题接口
 func SendMessageHandler(w http.ResponseWriter, r *http.Request) {
+	LogInfo("开始处理发送消息请求", map[string]interface{}{
+		"method": r.Method,
+		"path":   r.URL.Path,
+	})
+
 	if r.Method != http.MethodPost {
+		LogError("请求方法不支持", fmt.Errorf("期望POST方法，实际为%s", r.Method))
 		http.Error(w, "只支持POST请求", http.StatusMethodNotAllowed)
 		return
 	}
 
 	var req SendMessageRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		LogError("请求参数解析失败", err)
 		http.Error(w, "请求参数解析失败", http.StatusBadRequest)
 		return
 	}
 
+	LogStep("解析发送消息请求参数", map[string]interface{}{
+		"userId":     req.UserId,
+		"userName":   req.UserName,
+		"content":    req.Content,
+		"imageCount": len(req.Images),
+	})
+
 	// 验证参数
 	if req.UserId == 0 || req.Content == "" {
+		LogError("缺少必要参数", fmt.Errorf("userId=%d, content=%s", req.UserId, req.Content))
 		http.Error(w, "缺少必要参数", http.StatusBadRequest)
 		return
 	}
 
 	// 转换图片数组为JSON
+	LogStep("处理图片数据", map[string]interface{}{
+		"imageCount": len(req.Images),
+	})
 	imagesJson, _ := json.Marshal(req.Images)
 
 	// 创建消息
+	LogStep("开始创建消息对象", map[string]interface{}{
+		"userId":     req.UserId,
+		"userName":   req.UserName,
+		"content":    req.Content,
+		"imageCount": len(req.Images),
+	})
+
 	message := &model.KefuMessageModel{
 		UserId:     req.UserId,
 		UserName:   req.UserName,
@@ -67,7 +93,13 @@ func SendMessageHandler(w http.ResponseWriter, r *http.Request) {
 		Status:     0, // 未读
 	}
 
+	LogStep("开始保存消息到数据库", map[string]interface{}{
+		"userId":  message.UserId,
+		"content": message.Content,
+	})
+
 	if err := dao.KefuImp.CreateMessage(message); err != nil {
+		LogError("数据库保存消息失败", err)
 		response := &KefuResponse{
 			Code:     -1,
 			ErrorMsg: "发送消息失败: " + err.Error(),
@@ -76,6 +108,11 @@ func SendMessageHandler(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(response)
 		return
 	}
+
+	LogStep("消息保存成功", map[string]interface{}{
+		"messageId": message.Id,
+		"userId":    message.UserId,
+	})
 
 	response := &KefuResponse{
 		Code: 0,
@@ -86,6 +123,12 @@ func SendMessageHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
+
+	LogInfo("消息发送成功", map[string]interface{}{
+		"messageId": message.Id,
+		"userId":    message.UserId,
+		"content":   message.Content,
+	})
 }
 
 // FaqHandler 常见问题列表接口

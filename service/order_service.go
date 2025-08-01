@@ -67,26 +67,47 @@ type OrderListResponse struct {
 
 // SubmitOrderHandler 提交订单接口
 func SubmitOrderHandler(w http.ResponseWriter, r *http.Request) {
+	LogInfo("开始处理提交订单请求", map[string]interface{}{
+		"method": r.Method,
+		"path":   r.URL.Path,
+	})
+
 	if r.Method != http.MethodPost {
+		LogError("请求方法不支持", fmt.Errorf("期望POST方法，实际为%s", r.Method))
 		http.Error(w, "只支持POST请求", http.StatusMethodNotAllowed)
 		return
 	}
 
 	var req SubmitOrderRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		LogError("请求参数解析失败", err)
 		http.Error(w, "请求参数解析失败", http.StatusBadRequest)
 		return
 	}
 
+	LogStep("解析提交订单请求参数", map[string]interface{}{
+		"userId":        req.UserId,
+		"serviceId":     req.ServiceId,
+		"quantity":      req.Quantity,
+		"referrerId":    req.ReferrerId,
+		"formDataCount": len(req.FormData),
+	})
+
 	// 验证参数
 	if req.UserId == 0 || req.ServiceId == 0 || req.Quantity <= 0 {
+		LogError("缺少必要参数", fmt.Errorf("userId=%d, serviceId=%d, quantity=%d", req.UserId, req.ServiceId, req.Quantity))
 		http.Error(w, "缺少必要参数", http.StatusBadRequest)
 		return
 	}
 
 	// 获取服务信息
+	LogStep("开始查询服务信息", map[string]interface{}{
+		"serviceId": req.ServiceId,
+	})
+
 	service, err := dao.ServiceImp.GetServiceById(req.ServiceId)
 	if err != nil {
+		LogError("数据库查询服务信息失败", err)
 		response := &OrderResponse{
 			Code:     -1,
 			ErrorMsg: "获取服务信息失败: " + err.Error(),
@@ -96,19 +117,48 @@ func SubmitOrderHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	LogStep("服务信息查询成功", map[string]interface{}{
+		"serviceId":   service.Id,
+		"serviceName": service.Name,
+		"price":       service.Price,
+	})
+
 	// 生成订单号
 	orderNo := generateOrderNo()
+	LogStep("生成订单号", map[string]interface{}{
+		"orderNo": orderNo,
+	})
 
 	// 计算总金额
 	totalAmount := service.Price * float64(req.Quantity)
+	LogStep("计算订单金额", map[string]interface{}{
+		"unitPrice":   service.Price,
+		"quantity":    req.Quantity,
+		"totalAmount": totalAmount,
+	})
 
 	// 计算佣金（示例：5%）
 	commission := totalAmount * 0.05
+	LogStep("计算佣金", map[string]interface{}{
+		"commission": commission,
+		"rate":       0.05,
+	})
 
 	// 转换表单数据为JSON
 	formDataJson, _ := json.Marshal(req.FormData)
+	LogStep("处理表单数据", map[string]interface{}{
+		"formDataLength": len(string(formDataJson)),
+	})
 
 	// 创建订单
+	LogStep("开始创建订单对象", map[string]interface{}{
+		"orderNo":     orderNo,
+		"userId":      req.UserId,
+		"serviceId":   req.ServiceId,
+		"serviceName": service.Name,
+		"totalAmount": totalAmount,
+	})
+
 	order := &model.OrderModel{
 		OrderNo:     orderNo,
 		UserId:      req.UserId,
@@ -125,7 +175,14 @@ func SubmitOrderHandler(w http.ResponseWriter, r *http.Request) {
 		Remark:      req.Remark,
 	}
 
+	LogStep("开始保存订单到数据库", map[string]interface{}{
+		"orderNo":     order.OrderNo,
+		"userId":      order.UserId,
+		"totalAmount": order.TotalAmount,
+	})
+
 	if err := dao.OrderImp.CreateOrder(order); err != nil {
+		LogError("数据库创建订单失败", err)
 		response := &OrderResponse{
 			Code:     -1,
 			ErrorMsg: "创建订单失败: " + err.Error(),
@@ -134,6 +191,12 @@ func SubmitOrderHandler(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(response)
 		return
 	}
+
+	LogStep("订单创建成功", map[string]interface{}{
+		"orderId":     order.Id,
+		"orderNo":     order.OrderNo,
+		"totalAmount": order.TotalAmount,
+	})
 
 	response := &OrderResponse{
 		Code: 0,
@@ -145,6 +208,13 @@ func SubmitOrderHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
+
+	LogInfo("订单提交成功", map[string]interface{}{
+		"orderId":     order.Id,
+		"orderNo":     order.OrderNo,
+		"userId":      order.UserId,
+		"totalAmount": order.TotalAmount,
+	})
 }
 
 // PayOrderHandler 支付订单接口

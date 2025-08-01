@@ -56,9 +56,20 @@ type FormOption struct {
 	Value string `json:"value"`
 }
 
+// ServiceDetailRequest 服务详情请求
+type ServiceDetailRequest struct {
+	ServiceId json.Number `json:"serviceId"`
+}
+
 // ServiceListHandler 获取服务列表接口
 func ServiceListHandler(w http.ResponseWriter, r *http.Request) {
+	LogInfo("开始处理获取服务列表请求", map[string]interface{}{
+		"method": r.Method,
+		"path":   r.URL.Path,
+	})
+
 	if r.Method != http.MethodGet {
+		LogError("请求方法不支持", fmt.Errorf("期望GET方法，实际为%s", r.Method))
 		http.Error(w, "只支持GET请求", http.StatusMethodNotAllowed)
 		return
 	}
@@ -67,6 +78,12 @@ func ServiceListHandler(w http.ResponseWriter, r *http.Request) {
 	category := r.URL.Query().Get("category")
 	pageStr := r.URL.Query().Get("page")
 	pageSizeStr := r.URL.Query().Get("pageSize")
+
+	LogStep("解析查询参数", map[string]interface{}{
+		"category": category,
+		"page":     pageStr,
+		"pageSize": pageSizeStr,
+	})
 
 	// 设置默认值
 	page := 1
@@ -84,18 +101,33 @@ func ServiceListHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	LogStep("设置分页参数", map[string]interface{}{
+		"page":     page,
+		"pageSize": pageSize,
+	})
+
 	var services []*model.ServiceItemModel
 	var total int64
 	var err error
 
 	// 根据分类获取服务列表
 	if category != "" {
+		LogStep("开始按分类查询服务列表", map[string]interface{}{
+			"category": category,
+			"page":     page,
+			"pageSize": pageSize,
+		})
 		services, total, err = dao.ServiceImp.GetServicesByCategory(category, page, pageSize)
 	} else {
+		LogStep("开始查询所有服务列表", map[string]interface{}{
+			"page":     page,
+			"pageSize": pageSize,
+		})
 		services, total, err = dao.ServiceImp.GetAllServices(page, pageSize)
 	}
 
 	if err != nil {
+		LogError("数据库查询服务列表失败", err)
 		response := &ServiceResponse{
 			Code:     -1,
 			ErrorMsg: "获取服务列表失败: " + err.Error(),
@@ -105,8 +137,19 @@ func ServiceListHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	LogStep("服务列表查询成功", map[string]interface{}{
+		"serviceCount": len(services),
+		"total":        total,
+		"category":     category,
+	})
+
 	// 计算是否有更多数据
 	hasMore := int64(page*pageSize) < total
+	LogStep("计算分页信息", map[string]interface{}{
+		"hasMore": hasMore,
+		"total":   total,
+		"current": int64(page * pageSize),
+	})
 
 	response := &ServiceResponse{
 		Code: 0,
@@ -120,22 +163,32 @@ func ServiceListHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
-}
 
-// ServiceDetailRequest 服务详情请求
-type ServiceDetailRequest struct {
-	ServiceId int32 `json:"serviceId"`
+	LogInfo("服务列表获取成功", map[string]interface{}{
+		"serviceCount": len(services),
+		"total":        total,
+		"page":         page,
+		"pageSize":     pageSize,
+		"hasMore":      hasMore,
+	})
 }
 
 // ServiceDetailHandler 获取服务详情接口
 func ServiceDetailHandler(w http.ResponseWriter, r *http.Request) {
+	LogInfo("开始处理获取服务详情请求", map[string]interface{}{
+		"method": r.Method,
+		"path":   r.URL.Path,
+	})
+
 	if r.Method != http.MethodPost {
+		LogError("请求方法不支持", fmt.Errorf("期望POST方法，实际为%s", r.Method))
 		http.Error(w, "只支持POST请求", http.StatusMethodNotAllowed)
 		return
 	}
 
 	var req ServiceDetailRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		LogError("请求参数解析失败", err)
 		response := &ServiceResponse{
 			Code:     -1,
 			ErrorMsg: "请求参数解析失败: " + err.Error(),
@@ -145,8 +198,34 @@ func ServiceDetailHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	LogStep("解析服务详情请求参数", map[string]interface{}{
+		"serviceId": req.ServiceId.String(),
+	})
+
+	// 将json.Number转换为int32
+	LogStep("转换服务ID格式", map[string]interface{}{
+		"serviceIdString": req.ServiceId.String(),
+	})
+
+	serviceId, err := req.ServiceId.Int64()
+	if err != nil {
+		LogError("服务ID格式转换失败", err)
+		response := &ServiceResponse{
+			Code:     -1,
+			ErrorMsg: "无效的服务ID格式: " + req.ServiceId.String(),
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(response)
+		return
+	}
+
+	LogStep("服务ID转换成功", map[string]interface{}{
+		"serviceId": serviceId,
+	})
+
 	// 验证服务ID
-	if req.ServiceId <= 0 {
+	if serviceId <= 0 {
+		LogError("服务ID无效", fmt.Errorf("serviceId=%d", serviceId))
 		response := &ServiceResponse{
 			Code:     -1,
 			ErrorMsg: "无效的服务ID",
@@ -157,19 +236,25 @@ func ServiceDetailHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 获取服务详情
-	service, err := dao.ServiceImp.GetServiceById(req.ServiceId)
+	LogStep("开始查询服务详情", map[string]interface{}{
+		"serviceId": serviceId,
+	})
+
+	service, err := dao.ServiceImp.GetServiceById(int32(serviceId))
 	if err != nil {
+		LogError("数据库查询服务详情失败", err)
 		// 检查是否是记录不存在错误
 		if strings.Contains(err.Error(), "record not found") || strings.Contains(err.Error(), "no rows") {
+			LogError("服务不存在", fmt.Errorf("serviceId=%d", serviceId))
 			response := &ServiceResponse{
 				Code:     -1,
-				ErrorMsg: fmt.Sprintf("服务ID %d 不存在，请检查服务ID是否正确", req.ServiceId),
+				ErrorMsg: fmt.Sprintf("服务ID %d 不存在，请检查服务ID是否正确", serviceId),
 			}
 			w.Header().Set("Content-Type", "application/json")
 			json.NewEncoder(w).Encode(response)
 			return
 		}
-		
+
 		response := &ServiceResponse{
 			Code:     -1,
 			ErrorMsg: "获取服务详情失败: " + err.Error(),
@@ -179,11 +264,17 @@ func ServiceDetailHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	LogStep("服务详情查询成功", map[string]interface{}{
+		"serviceId":   service.Id,
+		"serviceName": service.Name,
+		"price":       service.Price,
+	})
+
 	// 检查服务状态
 	if service.Status == 0 {
 		response := &ServiceResponse{
 			Code:     -1,
-			ErrorMsg: fmt.Sprintf("服务ID %d 已下架，暂不可用", req.ServiceId),
+			ErrorMsg: fmt.Sprintf("服务ID %d 已下架，暂不可用", serviceId),
 		}
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(response)
