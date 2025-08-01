@@ -22,12 +22,16 @@ type OrderResponse struct {
 
 // SubmitOrderRequest 提交订单请求
 type SubmitOrderRequest struct {
-	UserId     int32                  `json:"userId"`
-	ServiceId  int32                  `json:"serviceId"`
-	Quantity   int                    `json:"quantity"`
-	FormData   map[string]interface{} `json:"formData"`
-	ReferrerId int32                  `json:"referrerId,omitempty"`
-	Remark     string                 `json:"remark"`
+	UserId          int32                  `json:"userId"`
+	ServiceId       int32                  `json:"serviceId"`
+	PatientId       int32                  `json:"patientId"`       // 就诊人ID
+	AddressId       int32                  `json:"addressId"`       // 地址ID
+	AppointmentDate string                 `json:"appointmentDate"` // 预约日期
+	AppointmentTime string                 `json:"appointmentTime"` // 预约时间
+	Quantity        int                    `json:"quantity"`
+	FormData        map[string]interface{} `json:"formData"`
+	ReferrerId      int32                  `json:"referrerId,omitempty"`
+	Remark          string                 `json:"remark"`
 }
 
 // PayOrderRequest 支付订单请求
@@ -86,19 +90,62 @@ func SubmitOrderHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	LogStep("解析提交订单请求参数", map[string]interface{}{
-		"userId":        req.UserId,
-		"serviceId":     req.ServiceId,
-		"quantity":      req.Quantity,
-		"referrerId":    req.ReferrerId,
-		"formDataCount": len(req.FormData),
+		"userId":          req.UserId,
+		"serviceId":       req.ServiceId,
+		"patientId":       req.PatientId,
+		"addressId":       req.AddressId,
+		"appointmentDate": req.AppointmentDate,
+		"appointmentTime": req.AppointmentTime,
+		"quantity":        req.Quantity,
+		"referrerId":      req.ReferrerId,
+		"formDataCount":   len(req.FormData),
 	})
 
 	// 验证参数
-	if req.UserId == 0 || req.ServiceId == 0 || req.Quantity <= 0 {
-		LogError("缺少必要参数", fmt.Errorf("userId=%d, serviceId=%d, quantity=%d", req.UserId, req.ServiceId, req.Quantity))
+	if req.UserId == 0 || req.ServiceId == 0 || req.PatientId == 0 || req.AddressId == 0 {
+		LogError("缺少必要参数", fmt.Errorf("userId=%d, serviceId=%d, patientId=%d, addressId=%d", req.UserId, req.ServiceId, req.PatientId, req.AddressId))
 		http.Error(w, "缺少必要参数", http.StatusBadRequest)
 		return
 	}
+
+	// 验证预约时间
+	if req.AppointmentDate == "" || req.AppointmentTime == "" {
+		LogError("缺少预约时间", fmt.Errorf("appointmentDate=%s, appointmentTime=%s", req.AppointmentDate, req.AppointmentTime))
+		http.Error(w, "请选择预约时间", http.StatusBadRequest)
+		return
+	}
+
+	// 验证预约时间是否在允许范围内（明天开始，未来7天）
+	appointmentDateTime, err := time.Parse("2006-01-02 15:04", req.AppointmentDate+" "+req.AppointmentTime)
+	if err != nil {
+		LogError("预约时间格式错误", err)
+		http.Error(w, "预约时间格式错误", http.StatusBadRequest)
+		return
+	}
+
+	tomorrow := time.Now().AddDate(0, 0, 1)
+	tomorrow = time.Date(tomorrow.Year(), tomorrow.Month(), tomorrow.Day(), 0, 0, 0, 0, tomorrow.Location())
+
+	maxDate := time.Now().AddDate(0, 0, 7)
+	maxDate = time.Date(maxDate.Year(), maxDate.Month(), maxDate.Day(), 23, 59, 59, 0, maxDate.Location())
+
+	if appointmentDateTime.Before(tomorrow) {
+		LogError("预约时间过早", fmt.Errorf("appointmentDateTime=%v, tomorrow=%v", appointmentDateTime, tomorrow))
+		http.Error(w, "预约时间不能早于明天", http.StatusBadRequest)
+		return
+	}
+
+	if appointmentDateTime.After(maxDate) {
+		LogError("预约时间过晚", fmt.Errorf("appointmentDateTime=%v, maxDate=%v", appointmentDateTime, maxDate))
+		http.Error(w, "预约时间不能超过7天后", http.StatusBadRequest)
+		return
+	}
+
+	LogStep("预约时间验证通过", map[string]interface{}{
+		"appointmentDateTime": appointmentDateTime,
+		"tomorrow":            tomorrow,
+		"maxDate":             maxDate,
+	})
 
 	// 获取服务信息
 	LogStep("开始查询服务信息", map[string]interface{}{
@@ -152,27 +199,35 @@ func SubmitOrderHandler(w http.ResponseWriter, r *http.Request) {
 
 	// 创建订单
 	LogStep("开始创建订单对象", map[string]interface{}{
-		"orderNo":     orderNo,
-		"userId":      req.UserId,
-		"serviceId":   req.ServiceId,
-		"serviceName": service.Name,
-		"totalAmount": totalAmount,
+		"orderNo":         orderNo,
+		"userId":          req.UserId,
+		"serviceId":       req.ServiceId,
+		"patientId":       req.PatientId,
+		"addressId":       req.AddressId,
+		"appointmentDate": req.AppointmentDate,
+		"appointmentTime": req.AppointmentTime,
+		"serviceName":     service.Name,
+		"totalAmount":     totalAmount,
 	})
 
 	order := &model.OrderModel{
-		OrderNo:     orderNo,
-		UserId:      req.UserId,
-		ServiceId:   req.ServiceId,
-		ServiceName: service.Name,
-		Price:       service.Price,
-		Quantity:    req.Quantity,
-		TotalAmount: totalAmount,
-		FormData:    string(formDataJson),
-		Status:      0, // 待支付
-		PayStatus:   0, // 未支付
-		ReferrerId:  req.ReferrerId,
-		Commission:  commission,
-		Remark:      req.Remark,
+		OrderNo:         orderNo,
+		UserId:          req.UserId,
+		ServiceId:       req.ServiceId,
+		PatientId:       req.PatientId,
+		AddressId:       req.AddressId,
+		AppointmentDate: req.AppointmentDate,
+		AppointmentTime: req.AppointmentTime,
+		ServiceName:     service.Name,
+		Price:           service.Price,
+		Quantity:        req.Quantity,
+		TotalAmount:     totalAmount,
+		FormData:        string(formDataJson),
+		Status:          0, // 待支付
+		PayStatus:       0, // 未支付
+		ReferrerId:      req.ReferrerId,
+		Commission:      commission,
+		Remark:          req.Remark,
 	}
 
 	LogStep("开始保存订单到数据库", map[string]interface{}{
