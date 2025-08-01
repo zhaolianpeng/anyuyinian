@@ -790,6 +790,16 @@ type OrderDetailRequest struct {
 	OrderNo string `json:"orderNo"` // 订单号
 }
 
+// OrderDetailResponse 订单详情响应
+type OrderDetailResponse struct {
+	*model.OrderModel
+	PatientName    string `json:"patientName,omitempty"`    // 患者姓名
+	PatientPhone   string `json:"patientPhone,omitempty"`   // 患者电话
+	AddressInfo    string `json:"addressInfo,omitempty"`    // 地址信息
+	ServiceTitle   string `json:"serviceTitle,omitempty"`   // 服务标题
+	FormattedPrice string `json:"formattedPrice,omitempty"` // 格式化价格
+}
+
 func OrderDetailHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "只支持POST请求", http.StatusMethodNotAllowed)
@@ -834,9 +844,46 @@ func OrderDetailHandler(w http.ResponseWriter, r *http.Request) {
 		"totalAmount": order.TotalAmount,
 	})
 
+	// 构建增强的订单详情响应
+	detailResponse := &OrderDetailResponse{
+		OrderModel: order,
+	}
+
+	// 获取患者信息
+	if order.PatientId > 0 {
+		patient, err := dao.UserExtendImp.GetPatientById(order.PatientId)
+		if err == nil && patient != nil {
+			detailResponse.PatientName = patient.Name
+			detailResponse.PatientPhone = patient.Phone
+		} else {
+			LogError("获取患者信息失败", err)
+		}
+	}
+
+	// 获取地址信息
+	if order.AddressId > 0 {
+		address, err := dao.UserExtendImp.GetAddressById(order.AddressId)
+		if err == nil && address != nil {
+			detailResponse.AddressInfo = address.Province + address.City + address.District + address.Address
+		} else {
+			LogError("获取地址信息失败", err)
+		}
+	}
+
+	// 格式化价格
+	detailResponse.FormattedPrice = fmt.Sprintf("%.2f", order.Price)
+	detailResponse.ServiceTitle = order.ServiceName
+
+	LogStep("订单详情增强信息", map[string]interface{}{
+		"patientName": detailResponse.PatientName,
+		"patientPhone": detailResponse.PatientPhone,
+		"addressInfo": detailResponse.AddressInfo,
+		"formattedPrice": detailResponse.FormattedPrice,
+	})
+
 	response := &OrderResponse{
 		Code: 0,
-		Data: order,
+		Data: detailResponse,
 	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
