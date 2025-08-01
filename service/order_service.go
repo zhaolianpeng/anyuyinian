@@ -32,7 +32,7 @@ type SubmitOrderRequest struct {
 	FormData         map[string]interface{} `json:"formData"`
 	ReferrerId       int32                  `json:"referrerId,omitempty"`
 	Remark           string                 `json:"remark"`
-	DiseaseInfo      string                 `json:"diseaseInfo"`      // 基础病信息
+	DiseaseInfo      string                 `json:"diseaseInfo"`      // 既往病史
 	NeedToiletAssist string                 `json:"needToiletAssist"` // 是否需要助排二便
 }
 

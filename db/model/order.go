@@ -12,7 +12,7 @@ type OrderModel struct {
 	AddressId        int32      `gorm:"column:addressId;not null" json:"addressId"`                // 地址ID
 	AppointmentDate  string     `gorm:"column:appointmentDate;not null" json:"appointmentDate"`    // 预约日期
 	AppointmentTime  string     `gorm:"column:appointmentTime;not null" json:"appointmentTime"`    // 预约时间
-	DiseaseInfo      string     `gorm:"column:diseaseInfo" json:"diseaseInfo"`                     // 基础病信息
+	DiseaseInfo      string     `gorm:"column:diseaseInfo" json:"diseaseInfo"`                     // 既往病史
 	NeedToiletAssist int        `gorm:"column:needToiletAssist;default:0" json:"needToiletAssist"` // 是否需要助排二便：0-不需要，1-需要
 	ServiceName      string     `gorm:"column:serviceName;not null" json:"serviceName"`
 	Price            float64    `gorm:"column:price;not null" json:"price"`

@@ -15,7 +15,7 @@
 - **患者年龄**：根据生日自动计算并显示年龄
 
 #### 预约信息新增字段
-- **基础病信息**：文本输入框，最多500字符
+- **既往病史**：文本输入框，最多500字符
 - **是否需要助排二便**：单选按钮（需要/不需要）
 
 ### 3. 功能增强
@@ -39,7 +39,7 @@ getAge(birthday) {
 
 #### 新增输入处理函数
 ```javascript
-// 基础病信息输入
+// 既往病史输入
 onDiseaseInput(e) {
   this.setData({
     'formData.diseaseInfo': e.detail.value
@@ -63,7 +63,7 @@ formData: {
   appointmentDate: '',
   appointmentTime: '',
   remark: '',
-  diseaseInfo: '',        // 新增：基础病信息
+  diseaseInfo: '',        // 新增：既往病史
   needToiletAssist: ''    // 新增：是否需要助排二便
 }
 ```
@@ -111,11 +111,11 @@ const orderData = {
   <text class="info-value">{{selectedPatient.birthday ? getAge(selectedPatient.birthday) + '岁' : '未知'}}</text>
 </view>
 
-<!-- 基础病信息 -->
+<!-- 既往病史 -->
 <view class="disease-section">
-  <text class="label">基础病信息</text>
+  <text class="label">既往病史</text>
   <textarea class="disease-input" 
-            placeholder="请描述患者的基础病情况（选填）" 
+            placeholder="请描述患者的既往病史（选填）" 
             value="{{formData.diseaseInfo}}"
             bindinput="onDiseaseInput"
             maxlength="500"
@@ -178,7 +178,7 @@ const orderData = {
   margin-left: 20rpx;
 }
 
-/* 基础病信息 */
+/* 既往病史 */
 .disease-section {
   padding: 20rpx 0;
   border-bottom: 1rpx solid #f0f0f0;
@@ -257,7 +257,7 @@ const orderData = {
 - 根据数据库中的性别字段（1=男，2=女）显示中文
 - 处理未知性别的情况
 
-### 3. 基础病信息
+### 3. 既往病史
 - 支持多行文本输入
 - 自动高度调整
 - 字符计数显示（最多500字符）
@@ -277,7 +277,7 @@ const orderData = {
 ## 数据流程
 
 1. **患者选择** → 自动显示性别和年龄
-2. **基础病信息输入** → 实时保存到formData
+2. **既往病史输入** → 实时保存到formData
 3. **助排二便选择** → 实时保存到formData
 4. **订单提交** → 包含所有新增字段
 
@@ -285,7 +285,7 @@ const orderData = {
 
 1. **年龄计算**：需要确保患者生日数据格式正确（YYYY-MM-DD）
 2. **性别显示**：依赖数据库中的性别字段，需要确保数据一致性
-3. **字符限制**：基础病信息限制500字符，避免数据过长
+3. **字符限制**：既往病史限制500字符，避免数据过长
 4. **必填验证**：新增字段都是选填，不影响订单提交
 5. **数据存储**：所有新增字段都会保存到订单数据中
 
@@ -293,6 +293,6 @@ const orderData = {
 
 1. **患者信息显示**：测试不同性别和生日的显示效果
 2. **年龄计算**：测试各种生日情况下的年龄计算准确性
-3. **基础病信息**：测试长文本输入和字符计数
+3. **既往病史**：测试长文本输入和字符计数
 4. **助排二便选择**：测试单选按钮的交互效果
 5. **订单提交**：确认新增字段正确提交到后端 

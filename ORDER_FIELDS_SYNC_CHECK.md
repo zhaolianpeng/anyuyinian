@@ -13,7 +13,7 @@
 - `appointmentTime`: 预约时间
 
 ### 2. 患者信息字段
-- `diseaseInfo`: 基础病信息（文本输入）
+- `diseaseInfo`: 既往病史（文本输入）
 - `needToiletAssist`: 是否需要助排二便（单选：0-不需要，1-需要）
 
 ## 后端同步状态检查
@@ -43,7 +43,7 @@ type OrderModel struct {
 ```go
 type SubmitOrderRequest struct {
     // ... 其他字段
-    DiseaseInfo     string `json:"diseaseInfo"`     // 基础病信息
+    DiseaseInfo     string `json:"diseaseInfo"`     // 既往病史
     NeedToiletAssist string `json:"needToiletAssist"` // 是否需要助排二便
 }
 ```
@@ -82,7 +82,7 @@ ALTER TABLE Orders ADD COLUMN appointmentDate VARCHAR(20) NOT NULL DEFAULT '' CO
 ALTER TABLE Orders ADD COLUMN appointmentTime VARCHAR(20) NOT NULL DEFAULT '' COMMENT '预约时间';
 
 -- 患者信息字段
-ALTER TABLE Orders ADD COLUMN diseaseInfo TEXT COMMENT '基础病信息';
+ALTER TABLE Orders ADD COLUMN diseaseInfo TEXT COMMENT '既往病史';
 ALTER TABLE Orders ADD COLUMN needToiletAssist TINYINT DEFAULT 0 COMMENT '是否需要助排二便：0-不需要，1-需要';
 ```
 
