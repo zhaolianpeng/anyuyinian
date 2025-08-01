@@ -2,6 +2,7 @@ package service
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -121,33 +122,68 @@ func ServiceListHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
+// ServiceDetailRequest 服务详情请求
+type ServiceDetailRequest struct {
+	ServiceId int32 `json:"serviceId"`
+}
+
 // ServiceDetailHandler 获取服务详情接口
 func ServiceDetailHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		http.Error(w, "只支持GET请求", http.StatusMethodNotAllowed)
+	if r.Method != http.MethodPost {
+		http.Error(w, "只支持POST请求", http.StatusMethodNotAllowed)
 		return
 	}
 
-	// 从URL路径中获取服务ID
-	pathParts := strings.Split(r.URL.Path, "/")
-	if len(pathParts) < 4 {
-		http.Error(w, "缺少服务ID参数", http.StatusBadRequest)
+	var req ServiceDetailRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		response := &ServiceResponse{
+			Code:     -1,
+			ErrorMsg: "请求参数解析失败: " + err.Error(),
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(response)
 		return
 	}
 
-	serviceIdStr := pathParts[3]
-	serviceId, err := strconv.Atoi(serviceIdStr)
-	if err != nil {
-		http.Error(w, "无效的服务ID", http.StatusBadRequest)
+	// 验证服务ID
+	if req.ServiceId <= 0 {
+		response := &ServiceResponse{
+			Code:     -1,
+			ErrorMsg: "无效的服务ID",
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(response)
 		return
 	}
 
 	// 获取服务详情
-	service, err := dao.ServiceImp.GetServiceById(int32(serviceId))
+	service, err := dao.ServiceImp.GetServiceById(req.ServiceId)
 	if err != nil {
+		// 检查是否是记录不存在错误
+		if strings.Contains(err.Error(), "record not found") || strings.Contains(err.Error(), "no rows") {
+			response := &ServiceResponse{
+				Code:     -1,
+				ErrorMsg: fmt.Sprintf("服务ID %d 不存在，请检查服务ID是否正确", req.ServiceId),
+			}
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(response)
+			return
+		}
+		
 		response := &ServiceResponse{
 			Code:     -1,
 			ErrorMsg: "获取服务详情失败: " + err.Error(),
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(response)
+		return
+	}
+
+	// 检查服务状态
+	if service.Status == 0 {
+		response := &ServiceResponse{
+			Code:     -1,
+			ErrorMsg: fmt.Sprintf("服务ID %d 已下架，暂不可用", req.ServiceId),
 		}
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(response)

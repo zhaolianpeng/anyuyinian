@@ -41,7 +41,7 @@ func main() {
 
 	// 服务相关接口
 	http.HandleFunc("/api/service/list", service.NewLogMiddleware(service.ServiceListHandler))
-	http.HandleFunc("/api/service/detail/", service.NewLogMiddleware(service.ServiceDetailHandler))
+	http.HandleFunc("/api/service/detail", service.NewLogMiddleware(service.ServiceDetailHandler))
 	http.HandleFunc("/api/service/form_config/", service.NewLogMiddleware(service.ServiceFormConfigHandler))
 
 	// 订单相关接口
