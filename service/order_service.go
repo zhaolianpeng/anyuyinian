@@ -197,8 +197,89 @@ func PayOrderHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// 生成微信支付参数
+	paymentParams, err := generateWechatPayParams(order, req.PayMethod)
+	if err != nil {
+		response := &OrderResponse{
+			Code:     -1,
+			ErrorMsg: "生成支付参数失败: " + err.Error(),
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(response)
+		return
+	}
+
+	response := &OrderResponse{
+		Code: 0,
+		Data: map[string]interface{}{
+			"orderId":       order.Id,
+			"orderNo":       order.OrderNo,
+			"totalAmount":   order.TotalAmount,
+			"paymentParams": paymentParams,
+		},
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+}
+
+// PayConfirmHandler 支付确认接口
+func PayConfirmHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "只支持POST请求", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// 从URL路径中获取订单ID
+	pathParts := strings.Split(r.URL.Path, "/")
+	if len(pathParts) < 4 {
+		http.Error(w, "缺少订单ID参数", http.StatusBadRequest)
+		return
+	}
+
+	orderIdStr := pathParts[3]
+	orderId, err := strconv.Atoi(orderIdStr)
+	if err != nil {
+		http.Error(w, "无效的订单ID", http.StatusBadRequest)
+		return
+	}
+
+	var req struct {
+		TransactionId string `json:"transactionId"`
+		PayMethod     string `json:"payMethod"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "请求参数解析失败", http.StatusBadRequest)
+		return
+	}
+
+	// 获取订单信息
+	order, err := dao.OrderImp.GetOrderById(int32(orderId))
+	if err != nil {
+		response := &OrderResponse{
+			Code:     -1,
+			ErrorMsg: "获取订单信息失败: " + err.Error(),
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(response)
+		return
+	}
+
+	// 检查订单状态
+	if order.Status != 0 {
+		response := &OrderResponse{
+			Code:     -1,
+			ErrorMsg: "订单状态不正确",
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(response)
+		return
+	}
+
 	// 生成交易号
-	transactionId := generateTransactionId()
+	transactionId := req.TransactionId
+	if transactionId == "" {
+		transactionId = generateTransactionId()
+	}
 
 	// 更新支付状态
 	payTime := time.Now()
@@ -506,4 +587,25 @@ func generateOrderNo() string {
 func generateTransactionId() string {
 	now := time.Now()
 	return fmt.Sprintf("TXN%d%d%d", now.Year(), now.Month(), now.Day()) + fmt.Sprintf("%06d", rand.Intn(999999))
+}
+
+// 生成微信支付参数
+func generateWechatPayParams(order *model.OrderModel, payMethod string) (map[string]interface{}, error) {
+	// 这里应该调用微信支付API生成支付参数
+	// 由于这是示例代码，我们返回模拟的支付参数
+
+	now := time.Now()
+	timeStamp := strconv.FormatInt(now.Unix(), 10)
+	nonceStr := fmt.Sprintf("wxpay_%d", rand.Intn(999999))
+
+	// 构建支付参数
+	paymentParams := map[string]interface{}{
+		"timeStamp": timeStamp,
+		"nonceStr":  nonceStr,
+		"package":   fmt.Sprintf("prepay_id=wx_%d", rand.Intn(999999)),
+		"signType":  "MD5",
+		"paySign":   fmt.Sprintf("pay_sign_%d", rand.Intn(999999)),
+	}
+
+	return paymentParams, nil
 }

@@ -47,6 +47,7 @@ func main() {
 	// 订单相关接口
 	http.HandleFunc("/api/order/submit", service.NewLogMiddleware(service.SubmitOrderHandler))
 	http.HandleFunc("/api/order/pay/", service.NewLogMiddleware(service.PayOrderHandler))
+	http.HandleFunc("/api/order/pay_confirm/", service.NewLogMiddleware(service.PayConfirmHandler))
 	http.HandleFunc("/api/order/cancel/", service.NewLogMiddleware(service.CancelOrderHandler))
 	http.HandleFunc("/api/order/refund/", service.NewLogMiddleware(service.RefundOrderHandler))
 	http.HandleFunc("/api/order/list", service.NewLogMiddleware(service.OrderListHandler))
