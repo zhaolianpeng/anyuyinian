@@ -172,16 +172,17 @@ class DetailedWebSocketDebugger {
         config: {
           env: websocket.env,
         },
-        service: websocket.service,
         path: '/',
         method: 'GET',
-        timeout: 5000,
-        success: () => {
-          resolve(true)
+        header: {
+          'X-WX-SERVICE': websocket.service,
+          'content-type': 'application/json'
         },
-        fail: () => {
-          resolve(false)
-        }
+        timeout: 5000
+      }).then(() => {
+        resolve(true)
+      }).catch(() => {
+        resolve(false)
       })
     })
   }
