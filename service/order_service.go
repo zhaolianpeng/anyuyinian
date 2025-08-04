@@ -338,12 +338,12 @@ func PayOrderHandler(w http.ResponseWriter, r *http.Request) {
 
 	// 从URL路径中获取订单ID
 	pathParts := strings.Split(r.URL.Path, "/")
-	if len(pathParts) < 4 {
+	if len(pathParts) < 5 {
 		http.Error(w, "缺少订单ID参数", http.StatusBadRequest)
 		return
 	}
 
-	orderIdStr := pathParts[3]
+	orderIdStr := pathParts[4] // 修复：使用索引4而不是3
 	orderId, err := strconv.Atoi(orderIdStr)
 	if err != nil {
 		http.Error(w, "无效的订单ID", http.StatusBadRequest)
@@ -413,12 +413,12 @@ func PayConfirmHandler(w http.ResponseWriter, r *http.Request) {
 
 	// 从URL路径中获取订单ID
 	pathParts := strings.Split(r.URL.Path, "/")
-	if len(pathParts) < 4 {
+	if len(pathParts) < 5 {
 		http.Error(w, "缺少订单ID参数", http.StatusBadRequest)
 		return
 	}
 
-	orderIdStr := pathParts[3]
+	orderIdStr := pathParts[4] // 修复：使用索引4而不是3
 	orderId, err := strconv.Atoi(orderIdStr)
 	if err != nil {
 		http.Error(w, "无效的订单ID", http.StatusBadRequest)
@@ -534,13 +534,13 @@ func CancelOrderHandler(w http.ResponseWriter, r *http.Request) {
 		"length":    len(pathParts),
 	})
 
-	if len(pathParts) < 4 {
+	if len(pathParts) < 5 {
 		LogError("URL路径格式错误", fmt.Errorf("路径段数不足: %d", len(pathParts)))
 		http.Error(w, "缺少订单ID参数", http.StatusBadRequest)
 		return
 	}
 
-	orderIdStr := pathParts[3]
+	orderIdStr := pathParts[4] // 修复：使用索引4而不是3
 	LogStep("解析订单ID", map[string]interface{}{
 		"orderIdStr": orderIdStr,
 		"pathParts":  pathParts,
@@ -642,12 +642,12 @@ func RefundOrderHandler(w http.ResponseWriter, r *http.Request) {
 
 	// 从URL路径中获取订单ID
 	pathParts := strings.Split(r.URL.Path, "/")
-	if len(pathParts) < 4 {
+	if len(pathParts) < 5 {
 		http.Error(w, "缺少订单ID参数", http.StatusBadRequest)
 		return
 	}
 
-	orderIdStr := pathParts[3]
+	orderIdStr := pathParts[4] // 修复：使用索引4而不是3
 	orderId, err := strconv.Atoi(orderIdStr)
 	if err != nil {
 		http.Error(w, "无效的订单ID", http.StatusBadRequest)
