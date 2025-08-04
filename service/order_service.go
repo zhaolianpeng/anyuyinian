@@ -863,16 +863,18 @@ func OrderListHandler(w http.ResponseWriter, r *http.Request) {
 		// 格式化金额
 		formattedAmount := fmt.Sprintf("¥%.2f", order.TotalAmount)
 
-		// 格式化日期
-		formattedDate := order.CreatedAt.Format("2006-01-02 15:04")
+		// 格式化日期 - 使用 UTC 时间，让前端处理时区转换
+		formattedDate := order.CreatedAt.UTC().Format("2006-01-02T15:04:05Z")
 
 		// 添加调试日志
 		LogStep("处理订单列表项", map[string]interface{}{
-			"orderId":     order.Id,
-			"orderNo":     order.OrderNo,
-			"totalAmount": order.TotalAmount,
-			"price":       order.Price,
-			"quantity":    order.Quantity,
+			"orderId":       order.Id,
+			"orderNo":       order.OrderNo,
+			"totalAmount":   order.TotalAmount,
+			"price":         order.Price,
+			"quantity":      order.Quantity,
+			"createdAt":     order.CreatedAt,
+			"formattedDate": formattedDate,
 		})
 
 		orderItem := &OrderListItem{
