@@ -16,8 +16,8 @@ func main() {
 	// 初始化订单超时处理服务
 	service.InitOrderTimeoutService()
 
-	// 启动WebSocket管理器
-	go service.WsManager.Start()
+	// 启动SSE管理器（替代WebSocket）
+	go service.SSEManagerInstance.Start()
 
 	// 基础页面和统计接口
 	http.HandleFunc("/", service.NewLogMiddleware(service.IndexHandler))
@@ -78,8 +78,8 @@ func main() {
 	http.HandleFunc("/api/hospital/list", service.NewLogMiddleware(service.HospitalListHandler))
 	http.HandleFunc("/api/hospital/detail/", service.NewLogMiddleware(service.HospitalDetailHandler))
 
-	// WebSocket路由
-	http.HandleFunc("/ws", service.NewLogMiddleware(service.WebSocketHandler))
+	// SSE路由（替代WebSocket）
+	http.HandleFunc("/sse", service.NewLogMiddleware(service.SSEHandler))
 
 	log.Fatal(http.ListenAndServe(":80", nil))
 }
