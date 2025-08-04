@@ -517,6 +517,7 @@ func CancelOrderHandler(w http.ResponseWriter, r *http.Request) {
 	LogInfo("开始处理取消订单请求", map[string]interface{}{
 		"method": r.Method,
 		"path":   r.URL.Path,
+		"url":    r.URL.String(),
 	})
 
 	if r.Method != http.MethodPost {
@@ -527,6 +528,12 @@ func CancelOrderHandler(w http.ResponseWriter, r *http.Request) {
 
 	// 从URL路径中获取订单ID
 	pathParts := strings.Split(r.URL.Path, "/")
+	LogStep("路径解析", map[string]interface{}{
+		"path":      r.URL.Path,
+		"pathParts": pathParts,
+		"length":    len(pathParts),
+	})
+
 	if len(pathParts) < 4 {
 		LogError("URL路径格式错误", fmt.Errorf("路径段数不足: %d", len(pathParts)))
 		http.Error(w, "缺少订单ID参数", http.StatusBadRequest)
@@ -536,7 +543,15 @@ func CancelOrderHandler(w http.ResponseWriter, r *http.Request) {
 	orderIdStr := pathParts[3]
 	LogStep("解析订单ID", map[string]interface{}{
 		"orderIdStr": orderIdStr,
+		"pathParts":  pathParts,
 	})
+
+	// 检查orderIdStr是否为空
+	if orderIdStr == "" {
+		LogError("订单ID为空", fmt.Errorf("orderIdStr为空"))
+		http.Error(w, "无效的订单ID", http.StatusBadRequest)
+		return
+	}
 
 	orderId, err := strconv.Atoi(orderIdStr)
 	if err != nil {
@@ -575,10 +590,10 @@ func CancelOrderHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	LogStep("获取订单信息成功", map[string]interface{}{
-		"orderId":   order.Id,
-		"orderNo":   order.OrderNo,
-		"status":    order.Status,
-		"userId":    order.UserId,
+		"orderId": order.Id,
+		"orderNo": order.OrderNo,
+		"status":  order.Status,
+		"userId":  order.UserId,
 	})
 
 	// 检查订单状态
