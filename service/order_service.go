@@ -690,23 +690,42 @@ func OrderListHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	LogStep("开始状态筛选逻辑", map[string]interface{}{
+		"statusStr": statusStr,
+		"userId":    userId,
+		"page":      page,
+		"pageSize":  pageSize,
+	})
+
+	// 先检查是否有该用户的任何订单（不按状态筛选）
+	allOrders, allTotal, allErr := dao.OrderImp.GetOrdersByUserId(int32(userId), 1, 1)
+	LogStep("检查用户订单总数", map[string]interface{}{
+		"userId":    userId,
+		"allOrders": len(allOrders),
+		"allTotal":  allTotal,
+		"allErr":    allErr,
+	})
+
 	// 状态筛选逻辑
 	var orders []*model.OrderModel
 	var total int64
 
 	if statusStr != "" {
-		// 状态映射：pending_pay -> 0, paid -> 1, cancelled -> 3, refunded -> 4
+		// 状态映射：支持数字和字符串状态值
 		var status int
 		switch statusStr {
-		case "pending_pay":
+		case "pending_pay", "0":
 			status = 0
-		case "paid":
+		case "paid", "1":
 			status = 1
-		case "cancelled":
+		case "cancelled", "3":
 			status = 3
-		case "refunded":
+		case "refunded", "4":
 			status = 4
 		default:
+			LogStep("状态值不匹配，返回空列表", map[string]interface{}{
+				"statusStr": statusStr,
+			})
 			// 如果状态不匹配，返回空列表
 			response := &OrderResponse{
 				Code: 0,
@@ -723,16 +742,85 @@ func OrderListHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		LogStep("按状态筛选订单", map[string]interface{}{
+			"status":   status,
+			"userId":   userId,
+			"page":     page,
+			"pageSize": pageSize,
+		})
+
 		// 按状态筛选订单
 		orders, total, err = dao.OrderImp.GetOrdersByStatusAndUserId(status, int32(userId), page, pageSize)
 	} else {
+		LogStep("获取所有订单", map[string]interface{}{
+			"userId":   userId,
+			"page":     page,
+			"pageSize": pageSize,
+		})
+
 		// 获取所有订单
 		orders, total, err = dao.OrderImp.GetOrdersByUserId(int32(userId), page, pageSize)
 	}
+
+	LogStep("数据库查询结果", map[string]interface{}{
+		"orderCount": len(orders),
+		"total":      total,
+		"error":      err,
+	})
+
 	if err != nil {
+		LogError("数据库查询失败", err)
 		response := &OrderResponse{
 			Code:     -1,
 			ErrorMsg: "获取订单列表失败: " + err.Error(),
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(response)
+		return
+	}
+
+	LogStep("数据库查询成功", map[string]interface{}{
+		"orderCount": len(orders),
+		"total":      total,
+	})
+
+	// 如果没有订单数据，直接返回空列表
+	if len(orders) == 0 {
+		LogStep("没有找到订单数据", map[string]interface{}{
+			"userId":   userId,
+			"status":   statusStr,
+			"page":     page,
+			"pageSize": pageSize,
+		})
+
+		// 临时调试：尝试获取所有订单来检查数据库状态
+		allOrdersDebug, allTotalDebug, allErrDebug := dao.OrderImp.GetOrdersByUserId(int32(userId), 1, 10)
+		LogStep("调试：检查用户所有订单", map[string]interface{}{
+			"userId":    userId,
+			"allOrders": len(allOrdersDebug),
+			"allTotal":  allTotalDebug,
+			"allErr":    allErrDebug,
+		})
+
+		// 如果用户有订单但状态筛选后为空，记录详细信息
+		if allTotalDebug > 0 && len(allOrdersDebug) > 0 {
+			LogStep("调试：用户有订单但状态筛选后为空", map[string]interface{}{
+				"userId":           userId,
+				"statusStr":        statusStr,
+				"allOrders":        len(allOrdersDebug),
+				"firstOrderStatus": allOrdersDebug[0].Status,
+			})
+		}
+
+		response := &OrderResponse{
+			Code: 0,
+			Data: &OrderListResponse{
+				List:     []*OrderListItem{},
+				Total:    0,
+				Page:     page,
+				PageSize: pageSize,
+				HasMore:  false,
+			},
 		}
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(response)
