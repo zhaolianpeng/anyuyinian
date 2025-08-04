@@ -514,7 +514,13 @@ func PayConfirmHandler(w http.ResponseWriter, r *http.Request) {
 
 // CancelOrderHandler 取消订单接口
 func CancelOrderHandler(w http.ResponseWriter, r *http.Request) {
+	LogInfo("开始处理取消订单请求", map[string]interface{}{
+		"method": r.Method,
+		"path":   r.URL.Path,
+	})
+
 	if r.Method != http.MethodPost {
+		LogError("请求方法不支持", fmt.Errorf("期望POST方法，实际为%s", r.Method))
 		http.Error(w, "只支持POST请求", http.StatusMethodNotAllowed)
 		return
 	}
@@ -522,26 +528,43 @@ func CancelOrderHandler(w http.ResponseWriter, r *http.Request) {
 	// 从URL路径中获取订单ID
 	pathParts := strings.Split(r.URL.Path, "/")
 	if len(pathParts) < 4 {
+		LogError("URL路径格式错误", fmt.Errorf("路径段数不足: %d", len(pathParts)))
 		http.Error(w, "缺少订单ID参数", http.StatusBadRequest)
 		return
 	}
 
 	orderIdStr := pathParts[3]
+	LogStep("解析订单ID", map[string]interface{}{
+		"orderIdStr": orderIdStr,
+	})
+
 	orderId, err := strconv.Atoi(orderIdStr)
 	if err != nil {
+		LogError("订单ID解析失败", err)
 		http.Error(w, "无效的订单ID", http.StatusBadRequest)
 		return
 	}
 
+	LogStep("订单ID解析成功", map[string]interface{}{
+		"orderId": orderId,
+	})
+
 	var req CancelOrderRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		LogError("请求参数解析失败", err)
 		http.Error(w, "请求参数解析失败", http.StatusBadRequest)
 		return
 	}
 
+	LogStep("请求参数解析成功", map[string]interface{}{
+		"orderId": req.OrderId,
+		"reason":  req.Reason,
+	})
+
 	// 获取订单信息
 	order, err := dao.OrderImp.GetOrderById(int32(orderId))
 	if err != nil {
+		LogError("获取订单信息失败", err)
 		response := &OrderResponse{
 			Code:     -1,
 			ErrorMsg: "获取订单信息失败: " + err.Error(),
@@ -551,11 +574,19 @@ func CancelOrderHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	LogStep("获取订单信息成功", map[string]interface{}{
+		"orderId":   order.Id,
+		"orderNo":   order.OrderNo,
+		"status":    order.Status,
+		"userId":    order.UserId,
+	})
+
 	// 检查订单状态
 	if order.Status != 0 {
+		LogError("订单状态不正确", fmt.Errorf("期望状态0，实际状态%d", order.Status))
 		response := &OrderResponse{
 			Code:     -1,
-			ErrorMsg: "订单状态不正确",
+			ErrorMsg: "订单状态不正确，只有待支付的订单可以取消",
 		}
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(response)
@@ -564,6 +595,7 @@ func CancelOrderHandler(w http.ResponseWriter, r *http.Request) {
 
 	// 更新订单状态为已取消
 	if err := dao.OrderImp.UpdateOrderStatus(int32(orderId), 3); err != nil {
+		LogError("更新订单状态失败", err)
 		response := &OrderResponse{
 			Code:     -1,
 			ErrorMsg: "取消订单失败: " + err.Error(),
@@ -572,6 +604,11 @@ func CancelOrderHandler(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(response)
 		return
 	}
+
+	LogStep("订单取消成功", map[string]interface{}{
+		"orderId": orderId,
+		"orderNo": order.OrderNo,
+	})
 
 	response := &OrderResponse{
 		Code: 0,
