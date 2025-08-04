@@ -261,6 +261,9 @@ func SubmitOrderHandler(w http.ResponseWriter, r *http.Request) {
 		needToiletAssist = 1
 	}
 
+	// 设置支付截止时间（30分钟后）
+	payDeadline := time.Now().Add(30 * time.Minute)
+
 	order := &model.OrderModel{
 		OrderNo:          orderNo,
 		UserId:           req.UserId,
@@ -276,8 +279,9 @@ func SubmitOrderHandler(w http.ResponseWriter, r *http.Request) {
 		Quantity:         req.Quantity,
 		TotalAmount:      totalAmount,
 		FormData:         string(formDataJson),
-		Status:           0, // 待支付
-		PayStatus:        0, // 未支付
+		Status:           0,            // 待支付
+		PayStatus:        0,            // 未支付
+		PayDeadline:      &payDeadline, // 支付截止时间
 		ReferrerId:       req.ReferrerId,
 		Commission:       commission,
 		Remark:           req.Remark,
@@ -875,9 +879,9 @@ func OrderDetailHandler(w http.ResponseWriter, r *http.Request) {
 	detailResponse.ServiceTitle = order.ServiceName
 
 	LogStep("订单详情增强信息", map[string]interface{}{
-		"patientName": detailResponse.PatientName,
-		"patientPhone": detailResponse.PatientPhone,
-		"addressInfo": detailResponse.AddressInfo,
+		"patientName":    detailResponse.PatientName,
+		"patientPhone":   detailResponse.PatientPhone,
+		"addressInfo":    detailResponse.AddressInfo,
 		"formattedPrice": detailResponse.FormattedPrice,
 	})
 

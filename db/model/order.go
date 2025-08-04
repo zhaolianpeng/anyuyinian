@@ -21,6 +21,7 @@ type OrderModel struct {
 	FormData         string     `gorm:"column:formData" json:"formData"`             // JSON格式的表单数据
 	Status           int        `gorm:"column:status;default:0" json:"status"`       // 0-待支付，1-已支付，2-已完成，3-已取消，4-已退款
 	PayStatus        int        `gorm:"column:payStatus;default:0" json:"payStatus"` // 0-未支付，1-已支付
+	PayDeadline      *time.Time `gorm:"column:payDeadline" json:"payDeadline"`       // 支付截止时间
 	PayTime          *time.Time `gorm:"column:payTime" json:"payTime"`
 	PayMethod        string     `gorm:"column:payMethod" json:"payMethod"`                 // 支付方式：wechat, alipay等
 	TransactionId    string     `gorm:"column:transactionId" json:"transactionId"`         // 第三方支付交易号

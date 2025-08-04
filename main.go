@@ -13,6 +13,9 @@ func main() {
 		panic(fmt.Sprintf("mysql init failed with %+v", err))
 	}
 
+	// 初始化订单超时处理服务
+	service.InitOrderTimeoutService()
+
 	// 基础页面和统计接口
 	http.HandleFunc("/", service.NewLogMiddleware(service.IndexHandler))
 	http.HandleFunc("/api/count", service.NewLogMiddleware(service.CounterHandler))
@@ -53,6 +56,10 @@ func main() {
 	http.HandleFunc("/api/order/list", service.NewLogMiddleware(service.OrderListHandler))
 	http.HandleFunc("/api/order/detail", service.NewLogMiddleware(service.OrderDetailHandler))
 	http.HandleFunc("/api/order/time_slots", service.NewLogMiddleware(service.GetAvailableTimeSlotsHandler))
+
+	// 订单超时相关接口
+	http.HandleFunc("/api/order/check_expired", service.NewLogMiddleware(service.CheckExpiredOrdersHandler))
+	http.HandleFunc("/api/order/expired_count", service.NewLogMiddleware(service.GetExpiredOrdersCountHandler))
 
 	// 推荐相关接口
 	http.HandleFunc("/api/referral/qrcode", service.NewLogMiddleware(service.ReferralQrCodeHandler))
