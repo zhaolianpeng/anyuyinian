@@ -152,3 +152,27 @@ func (imp *OrderInterfaceImp) GetOrdersByStatus(status int, page, pageSize int) 
 
 	return orders, total, err
 }
+
+// GetOrdersByStatusAndUserId 根据状态和用户ID获取订单列表
+func (imp *OrderInterfaceImp) GetOrdersByStatusAndUserId(status int, userId int32, page, pageSize int) ([]*model.OrderModel, int64, error) {
+	var orders []*model.OrderModel
+	var total int64
+	cli := db.Get()
+
+	// 获取总数
+	err := cli.Table(orderTableName).Where("status = ? AND userId = ?", status, userId).Count(&total).Error
+	if err != nil {
+		return nil, 0, err
+	}
+
+	// 获取分页数据
+	offset := (page - 1) * pageSize
+	err = cli.Table(orderTableName).
+		Where("status = ? AND userId = ?", status, userId).
+		Order("createdAt DESC").
+		Offset(offset).
+		Limit(pageSize).
+		Find(&orders).Error
+
+	return orders, total, err
+}

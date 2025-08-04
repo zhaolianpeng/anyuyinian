@@ -661,6 +661,7 @@ func OrderListHandler(w http.ResponseWriter, r *http.Request) {
 	userIdStr := r.URL.Query().Get("userId")
 	pageStr := r.URL.Query().Get("page")
 	pageSizeStr := r.URL.Query().Get("pageSize")
+	statusStr := r.URL.Query().Get("status") // 新增状态筛选参数
 
 	if userIdStr == "" {
 		http.Error(w, "缺少userId参数", http.StatusBadRequest)
@@ -689,8 +690,45 @@ func OrderListHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// 获取订单列表
-	orders, total, err := dao.OrderImp.GetOrdersByUserId(int32(userId), page, pageSize)
+	// 状态筛选逻辑
+	var orders []*model.OrderModel
+	var total int64
+
+	if statusStr != "" {
+		// 状态映射：pending_pay -> 0, paid -> 1, cancelled -> 3, refunded -> 4
+		var status int
+		switch statusStr {
+		case "pending_pay":
+			status = 0
+		case "paid":
+			status = 1
+		case "cancelled":
+			status = 3
+		case "refunded":
+			status = 4
+		default:
+			// 如果状态不匹配，返回空列表
+			response := &OrderResponse{
+				Code: 0,
+				Data: &OrderListResponse{
+					List:     []*OrderListItem{},
+					Total:    0,
+					Page:     page,
+					PageSize: pageSize,
+					HasMore:  false,
+				},
+			}
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(response)
+			return
+		}
+
+		// 按状态筛选订单
+		orders, total, err = dao.OrderImp.GetOrdersByStatusAndUserId(status, int32(userId), page, pageSize)
+	} else {
+		// 获取所有订单
+		orders, total, err = dao.OrderImp.GetOrdersByUserId(int32(userId), page, pageSize)
+	}
 	if err != nil {
 		response := &OrderResponse{
 			Code:     -1,

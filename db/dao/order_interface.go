@@ -18,6 +18,7 @@ type OrderInterface interface {
 	GetExpiredOrders() ([]*model.OrderModel, error)
 	BatchCancelExpiredOrders() (int64, error)
 	GetOrdersByStatus(status int, page, pageSize int) ([]*model.OrderModel, int64, error)
+	GetOrdersByStatusAndUserId(status int, userId int32, page, pageSize int) ([]*model.OrderModel, int64, error)
 }
 
 // OrderInterfaceImp 订单数据实现
