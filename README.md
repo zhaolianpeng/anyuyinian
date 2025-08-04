@@ -1,119 +1,209 @@
-# wxcloudrun-golang
-[![GitHub license](https://img.shields.io/github/license/WeixinCloud/wxcloudrun-express)](https://github.com/WeixinCloud/wxcloudrun-express)
-![GitHub package.json dependency version (prod)](https://img.shields.io/badge/golang-1.17.1-green)
+# 医疗服务平台项目
 
-微信云托管 golang 模版，实现简单的计数器读写接口，使用云托管 MySQL 读写、记录计数值。
+## 项目概述
 
-![](https://qcloudimg.tencent-cloud.cn/raw/be22992d297d1b9a1a5365e606276781.png)
+这是一个基于微信小程序的医疗服务平台，提供预约服务、订单管理、用户管理等功能。项目采用前后端分离架构，后端使用Go语言开发，前端使用微信小程序开发。
 
+## 项目结构
+
+```
+├── anyuyinian/                    # 后端项目目录
+│   ├── main.go                   # 主程序入口
+│   ├── service/                  # 业务逻辑层
+│   ├── db/                       # 数据访问层
+│   ├── config/                   # 配置文件
+│   ├── docs/                     # 后端文档
+│   │   ├── backend/              # 后端实现文档
+│   │   └── frontend/             # 前端相关文档
+│   ├── tests/                    # 测试脚本
+│   │   ├── backend/              # 后端测试脚本
+│   │   └── frontend/             # 前端测试脚本
+│   └── README.md                 # 后端项目说明
+├── miniprogram/                   # 前端项目目录
+│   ├── app.js                    # 小程序入口文件
+│   ├── pages/                    # 页面文件
+│   ├── components/               # 组件文件
+│   ├── utils/                    # 工具类文件
+│   ├── docs/                     # 前端文档
+│   │   └── frontend/             # 前端实现文档
+│   ├── tests/                    # 前端测试脚本
+│   └── README.md                 # 前端项目说明
+├── docs/                         # 项目文档总览
+│   ├── backend/                  # 后端文档
+│   └── frontend/                 # 前端文档
+├── tests/                        # 项目测试总览
+│   ├── backend/                  # 后端测试
+│   └── frontend/                 # 前端测试
+└── README.md                     # 项目总说明
+```
+
+## 技术栈
+
+### 后端技术栈
+- **语言**: Go 1.16+
+- **数据库**: MySQL 5.7+
+- **ORM**: GORM
+- **架构**: MVC分层架构
+- **API风格**: RESTful API
+- **部署**: 微信云托管
+
+### 前端技术栈
+- **框架**: 微信小程序
+- **语言**: JavaScript
+- **样式**: WXSS
+- **模板**: WXML
+- **云服务**: 微信云托管
+
+## 功能模块
+
+### 1. 用户管理
+- 微信登录认证
+- 用户信息管理
+- 地址管理
+- 就诊人管理
+
+### 2. 服务管理
+- 服务列表展示
+- 服务详情查看
+- 服务预约功能
+- 服务表单配置
+
+### 3. 订单管理
+- 订单提交
+- 订单支付
+- 订单取消
+- 订单退款
+- 订单列表筛选
+
+### 4. 推荐系统
+- 推广二维码
+- 佣金管理
+- 提现功能
+- 推荐关系管理
+
+### 5. 客服医院
+- 客服咨询
+- FAQ管理
+- 医院信息
+- 消息推送
 
 ## 快速开始
-前往 [微信云托管快速开始页面](https://developers.weixin.qq.com/miniprogram/dev/wxcloudrun/src/basic/guide.html)，选择相应语言的模板，根据引导完成部署。
 
-## 本地调试
-下载代码在本地调试，请参考[微信云托管本地调试指南](https://developers.weixin.qq.com/miniprogram/dev/wxcloudrun/src/guide/debug/)
+### 环境要求
+- Go 1.16+
+- MySQL 5.7+
+- 微信开发者工具
+- 微信云托管环境
 
-## 实时开发
-代码变动时，不需要重新构建和启动容器，即可查看变动后的效果。请参考[微信云托管实时开发指南](https://developers.weixin.qq.com/miniprogram/dev/wxcloudrun/src/guide/debug/dev.html)
-
-## Dockerfile最佳实践
-请参考[如何提高项目构建效率](https://developers.weixin.qq.com/miniprogram/dev/wxcloudrun/src/scene/build/speed.html)
-
-## 目录结构说明
-~~~
-.
-├── Dockerfile                Dockerfile 文件
-├── LICENSE                   LICENSE 文件
-├── README.md                 README 文件
-├── container.config.json     模板部署「服务设置」初始化配置（二开请忽略）
-├── db                        数据库逻辑目录
-├── go.mod                    go.mod 文件
-├── go.sum                    go.sum 文件
-├── index.html                主页 html 
-├── main.go                   主函数入口
-└── service                   接口服务逻辑目录
-~~~
-
-
-## 服务 API 文档
-
-### `GET /api/count`
-
-获取当前计数
-
-#### 请求参数
-
-无
-
-#### 响应结果
-
-- `code`：错误码
-- `data`：当前计数值
-
-##### 响应结果示例
-
-```json
-{
-  "code": 0,
-  "data": 42
-}
+### 后端启动
+```bash
+cd anyuyinian
+go mod tidy
+go run main.go
 ```
 
-#### 调用示例
+### 前端启动
+1. 使用微信开发者工具打开 `miniprogram` 目录
+2. 配置云托管环境
+3. 编译并预览
 
-```
-curl https://<云托管服务域名>/api/count
-```
+## 文档说明
 
+### 后端文档
+- **实现文档**: `docs/backend/` - 包含所有后端功能的实现文档
+- **API文档**: `docs/backend/` - 包含API接口说明和变更记录
+- **修复文档**: `docs/backend/` - 包含问题修复和优化记录
 
+### 前端文档
+- **实现文档**: `docs/frontend/` - 包含前端功能的实现文档
+- **使用指南**: `docs/frontend/` - 包含开发和使用指南
 
-### `POST /api/count`
+## 测试说明
 
-更新计数，自增或者清零
+### 后端测试
+- **API测试**: `tests/backend/` - 包含所有API接口的测试脚本
+- **数据库测试**: `tests/backend/` - 包含数据库操作和SQL脚本
+- **功能测试**: `tests/backend/` - 包含业务功能的测试用例
 
-#### 请求参数
+### 前端测试
+- **页面测试**: `tests/frontend/` - 包含页面功能和交互测试
+- **组件测试**: `tests/frontend/` - 包含组件功能测试
+- **工具测试**: `tests/frontend/` - 包含工具类和API调用测试
 
-- `action`：`string` 类型，枚举值
-  - 等于 `"inc"` 时，表示计数加一
-  - 等于 `"clear"` 时，表示计数重置（清零）
+## 部署说明
 
-##### 请求参数示例
+### 云托管部署
+1. 配置微信云托管环境
+2. 上传后端代码
+3. 配置环境变量
+4. 启动服务
 
-```
-{
-  "action": "inc"
-}
-```
+### 小程序发布
+1. 在微信开发者工具中编译
+2. 上传代码到微信后台
+3. 提交审核
+4. 发布上线
 
-#### 响应结果
+## 开发规范
 
-- `code`：错误码
-- `data`：当前计数值
+### 代码规范
+- 遵循Go语言官方代码规范
+- 遵循微信小程序开发规范
+- 使用统一的代码格式化工具
 
-##### 响应结果示例
+### 文档规范
+- 新增功能时及时更新文档
+- 修复问题时记录修复过程
+- 保持文档的准确性和时效性
 
-```json
-{
-  "code": 0,
-  "data": 42
-}
-```
+### 测试规范
+- 新增功能时添加对应测试
+- 修复问题时更新测试用例
+- 定期运行测试确保功能正常
 
-#### 调用示例
+## 版本历史
 
-```
-curl -X POST -H 'content-type: application/json' -d '{"action": "inc"}' https://<云托管服务域名>/api/count
-```
+### v1.3.0 (当前版本)
+- ✅ 使用官方推荐的云托管API调用方式
+- ✅ 优化错误处理和重试机制
+- ✅ 完善订单Tab筛选功能
+- ✅ 增强WebSocket连接稳定性
 
-## 使用注意
-如果不是通过微信云托管控制台部署模板代码，而是自行复制/下载模板代码后，手动新建一个服务并部署，需要在「服务设置」中补全以下环境变量，才可正常使用，否则会引发无法连接数据库，进而导致部署失败。
-- MYSQL_ADDRESS
-- MYSQL_PASSWORD
-- MYSQL_USERNAME
-以上三个变量的值请按实际情况填写。如果使用云托管内MySQL，可以在控制台MySQL页面获取相关信息。
+### v1.2.0
+- ✅ 优化错误处理和重试机制
+- ✅ 添加WebSocket支持
+- ✅ 完善订单管理功能
 
+### v1.1.0
+- ✅ 添加WebSocket支持
+- ✅ 优化用户界面
+- ✅ 完善订单功能
 
+### v1.0.0
+- ✅ 初始版本发布
+- ✅ 基础功能实现
+- ✅ 用户认证功能
 
-## License
+## 贡献指南
 
-[MIT](./LICENSE)
+### 开发流程
+1. Fork项目到个人仓库
+2. 创建功能分支
+3. 开发新功能或修复问题
+4. 编写测试用例
+5. 提交Pull Request
+
+### 代码审查
+- 所有代码变更需要经过审查
+- 确保代码质量和安全性
+- 保持代码风格的一致性
+
+## 联系方式
+
+- **项目维护**: 开发团队
+- **技术支持**: 技术团队
+- **问题反馈**: 通过GitHub Issues提交
+
+## 许可证
+
+本项目采用 MIT 许可证，详见 [LICENSE](LICENSE) 文件。
