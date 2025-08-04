@@ -17,7 +17,7 @@ func main() {
 	service.InitOrderTimeoutService()
 
 	// 启动WebSocket管理器
-	go service.WsManager.start()
+	go service.WsManager.Start()
 
 	// 基础页面和统计接口
 	http.HandleFunc("/", service.NewLogMiddleware(service.IndexHandler))

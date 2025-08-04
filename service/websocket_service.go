@@ -31,7 +31,7 @@ var WsManager = &WebSocketManager{
 	unregister: make(chan *websocket.Conn),
 }
 
-func (manager *WebSocketManager) start() {
+func (manager *WebSocketManager) Start() {
 	for {
 		select {
 		case client := <-manager.register:
@@ -73,8 +73,8 @@ func WebSocketHandler(w http.ResponseWriter, r *http.Request) {
 
 	// 发送欢迎消息
 	welcomeMsg := map[string]interface{}{
-		"type":    "system",
-		"message": "WebSocket连接成功",
+		"type":      "system",
+		"message":   "WebSocket连接成功",
 		"timestamp": time.Now().Unix(),
 	}
 	welcomeBytes, _ := json.Marshal(welcomeMsg)
@@ -111,8 +111,8 @@ func handleWebSocketMessage(conn *websocket.Conn, message []byte) {
 	case "connect":
 		// 处理连接消息
 		response := map[string]interface{}{
-			"type":    "connect_ack",
-			"message": "连接已确认",
+			"type":      "connect_ack",
+			"message":   "连接已确认",
 			"timestamp": time.Now().Unix(),
 		}
 		responseBytes, _ := json.Marshal(response)
@@ -121,7 +121,7 @@ func handleWebSocketMessage(conn *websocket.Conn, message []byte) {
 	case "ping":
 		// 处理心跳消息
 		response := map[string]interface{}{
-			"type":    "pong",
+			"type":      "pong",
 			"timestamp": time.Now().Unix(),
 		}
 		responseBytes, _ := json.Marshal(response)
@@ -143,8 +143,8 @@ func handleWebSocketMessage(conn *websocket.Conn, message []byte) {
 func handleOrderUpdateMessage(conn *websocket.Conn, msg map[string]interface{}) {
 	// 处理订单更新逻辑
 	response := map[string]interface{}{
-		"type":    "order_update_ack",
-		"message": "订单更新已确认",
+		"type":      "order_update_ack",
+		"message":   "订单更新已确认",
 		"timestamp": time.Now().Unix(),
 	}
 	responseBytes, _ := json.Marshal(response)
@@ -154,8 +154,8 @@ func handleOrderUpdateMessage(conn *websocket.Conn, msg map[string]interface{}) 
 func handleNotificationMessage(conn *websocket.Conn, msg map[string]interface{}) {
 	// 处理通知消息逻辑
 	response := map[string]interface{}{
-		"type":    "notification_ack",
-		"message": "通知已确认",
+		"type":      "notification_ack",
+		"message":   "通知已确认",
 		"timestamp": time.Now().Unix(),
 	}
 	responseBytes, _ := json.Marshal(response)
@@ -165,8 +165,8 @@ func handleNotificationMessage(conn *websocket.Conn, msg map[string]interface{})
 // BroadcastMessage 广播消息给所有客户端
 func BroadcastMessage(messageType string, data interface{}) {
 	message := map[string]interface{}{
-		"type":    messageType,
-		"data":    data,
+		"type":      messageType,
+		"data":      data,
 		"timestamp": time.Now().Unix(),
 	}
 	messageBytes, _ := json.Marshal(message)
@@ -193,9 +193,9 @@ func BroadcastNotification(title string, content string, notificationType string
 	message := map[string]interface{}{
 		"type": "notification",
 		"data": map[string]interface{}{
-			"title": title,
+			"title":   title,
 			"content": content,
-			"type":   notificationType,
+			"type":    notificationType,
 		},
 		"timestamp": time.Now().Unix(),
 	}
@@ -222,4 +222,4 @@ func GetConnectedClientsCount() int {
 	WsManager.mutex.RLock()
 	defer WsManager.mutex.RUnlock()
 	return len(WsManager.clients)
-} 
+}
