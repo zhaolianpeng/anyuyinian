@@ -244,19 +244,26 @@ func GetCommissionListHandler(w http.ResponseWriter, r *http.Request) {
 
 	// 转换为前端格式
 	var commissionList []*CommissionInfo
-	for _, commission := range commissions {
-		commissionInfo := &CommissionInfo{
-			Id:          commission.Id,
-			OrderId:     commission.OrderId,
-			OrderNo:     commission.OrderNo,
-			Amount:      commission.Amount,
-			Rate:        commission.Rate,
-			Status:      commission.Status,
-			StatusText:  getCommissionStatusText(commission.Status),
-			CashoutTime: commission.CashoutTime,
-			CreatedAt:   commission.CreatedAt,
+	if commissions != nil {
+		for _, commission := range commissions {
+			commissionInfo := &CommissionInfo{
+				Id:          commission.Id,
+				OrderId:     commission.OrderId,
+				OrderNo:     commission.OrderNo,
+				Amount:      commission.Amount,
+				Rate:        commission.Rate,
+				Status:      commission.Status,
+				StatusText:  getCommissionStatusText(commission.Status),
+				CashoutTime: commission.CashoutTime,
+				CreatedAt:   commission.CreatedAt,
+			}
+			commissionList = append(commissionList, commissionInfo)
 		}
-		commissionList = append(commissionList, commissionInfo)
+	}
+
+	// 确保返回空数组而不是null
+	if commissionList == nil {
+		commissionList = []*CommissionInfo{}
 	}
 
 	response := &PromoterResponse{
@@ -323,20 +330,27 @@ func GetCashoutListHandler(w http.ResponseWriter, r *http.Request) {
 
 	// 转换为前端格式
 	var cashoutList []*CashoutInfo
-	for _, cashout := range cashouts {
-		cashoutInfo := &CashoutInfo{
-			Id:          cashout.Id,
-			Amount:      cashout.Amount,
-			Method:      cashout.Method,
-			MethodText:  getCashoutMethodText(cashout.Method),
-			Account:     cashout.Account,
-			Status:      cashout.Status,
-			StatusText:  getCashoutStatusText(cashout.Status),
-			Remark:      cashout.Remark,
-			ProcessTime: cashout.ProcessTime,
-			CreatedAt:   cashout.CreatedAt,
+	if cashouts != nil {
+		for _, cashout := range cashouts {
+			cashoutInfo := &CashoutInfo{
+				Id:          cashout.Id,
+				Amount:      cashout.Amount,
+				Method:      cashout.Method,
+				MethodText:  getCashoutMethodText(cashout.Method),
+				Account:     cashout.Account,
+				Status:      cashout.Status,
+				StatusText:  getCashoutStatusText(cashout.Status),
+				Remark:      cashout.Remark,
+				ProcessTime: cashout.ProcessTime,
+				CreatedAt:   cashout.CreatedAt,
+			}
+			cashoutList = append(cashoutList, cashoutInfo)
 		}
-		cashoutList = append(cashoutList, cashoutInfo)
+	}
+
+	// 确保返回空数组而不是null
+	if cashoutList == nil {
+		cashoutList = []*CashoutInfo{}
 	}
 
 	response := &PromoterResponse{
