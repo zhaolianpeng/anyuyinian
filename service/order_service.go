@@ -22,7 +22,7 @@ type OrderResponse struct {
 
 // SubmitOrderRequest 提交订单请求
 type SubmitOrderRequest struct {
-	UserId           int32                  `json:"userId"`
+	UserId           string                 `json:"userId"`
 	ServiceId        int32                  `json:"serviceId"`
 	PatientId        int32                  `json:"patientId"`       // 就诊人ID
 	AddressId        int32                  `json:"addressId"`       // 地址ID
@@ -57,9 +57,9 @@ type RefundOrderRequest struct {
 
 // OrderListRequest 订单列表请求
 type OrderListRequest struct {
-	UserId   int32 `json:"userId"`
-	Page     int   `json:"page"`
-	PageSize int   `json:"pageSize"`
+	UserId   string `json:"userId"`
+	Page     int    `json:"page"`
+	PageSize int    `json:"pageSize"`
 }
 
 // OrderListItem 订单列表项（增强版）
@@ -125,8 +125,8 @@ func SubmitOrderHandler(w http.ResponseWriter, r *http.Request) {
 	})
 
 	// 验证参数
-	if req.UserId == 0 || req.ServiceId == 0 || req.PatientId == 0 || req.AddressId == 0 {
-		LogError("缺少必要参数", fmt.Errorf("userId=%d, serviceId=%d, patientId=%d, addressId=%d", req.UserId, req.ServiceId, req.PatientId, req.AddressId))
+	if req.UserId == "" || req.ServiceId == 0 || req.PatientId == 0 || req.AddressId == 0 {
+		LogError("缺少必要参数", fmt.Errorf("userId=%s, serviceId=%d, patientId=%d, addressId=%d", req.UserId, req.ServiceId, req.PatientId, req.AddressId))
 		http.Error(w, "缺少必要参数", http.StatusBadRequest)
 		return
 	}
@@ -489,7 +489,7 @@ func PayConfirmHandler(w http.ResponseWriter, r *http.Request) {
 	// 如果有推荐人，创建佣金记录
 	if order.ReferrerId > 0 && order.Commission > 0 {
 		commission := &model.CommissionModel{
-			UserId:  order.ReferrerId,
+			UserId:  fmt.Sprintf("%d", order.ReferrerId), // 将int32转换为string
 			OrderId: order.Id,
 			OrderNo: order.OrderNo,
 			Amount:  order.Commission,
@@ -710,21 +710,19 @@ func OrderListHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 解析查询参数
-	userIdStr := r.URL.Query().Get("userId")
 	pageStr := r.URL.Query().Get("page")
 	pageSizeStr := r.URL.Query().Get("pageSize")
 	statusStr := r.URL.Query().Get("status") // 新增状态筛选参数
 
+	// 获取用户ID参数
+	userIdStr := r.URL.Query().Get("userId")
 	if userIdStr == "" {
 		http.Error(w, "缺少userId参数", http.StatusBadRequest)
 		return
 	}
 
-	userId, err := strconv.Atoi(userIdStr)
-	if err != nil {
-		http.Error(w, "无效的用户ID", http.StatusBadRequest)
-		return
-	}
+	// 直接使用字符串类型的userId
+	userId := userIdStr
 
 	// 设置默认值
 	page := 1
@@ -750,7 +748,7 @@ func OrderListHandler(w http.ResponseWriter, r *http.Request) {
 	})
 
 	// 先检查是否有该用户的任何订单（不按状态筛选）
-	allOrders, allTotal, allErr := dao.OrderImp.GetOrdersByUserId(int32(userId), 1, 1)
+	allOrders, allTotal, allErr := dao.OrderImp.GetOrdersByUserId(userId, 1, 1)
 	LogStep("检查用户订单总数", map[string]interface{}{
 		"userId":    userId,
 		"allOrders": len(allOrders),
@@ -761,6 +759,7 @@ func OrderListHandler(w http.ResponseWriter, r *http.Request) {
 	// 状态筛选逻辑
 	var orders []*model.OrderModel
 	var total int64
+	var err error
 
 	if statusStr != "" {
 		// 状态映射：支持数字和字符串状态值
@@ -802,7 +801,7 @@ func OrderListHandler(w http.ResponseWriter, r *http.Request) {
 		})
 
 		// 按状态筛选订单
-		orders, total, err = dao.OrderImp.GetOrdersByStatusAndUserId(status, int32(userId), page, pageSize)
+		orders, total, err = dao.OrderImp.GetOrdersByStatusAndUserId(status, userId, page, pageSize)
 	} else {
 		LogStep("获取所有订单", map[string]interface{}{
 			"userId":   userId,
@@ -811,7 +810,7 @@ func OrderListHandler(w http.ResponseWriter, r *http.Request) {
 		})
 
 		// 获取所有订单
-		orders, total, err = dao.OrderImp.GetOrdersByUserId(int32(userId), page, pageSize)
+		orders, total, err = dao.OrderImp.GetOrdersByUserId(userId, page, pageSize)
 	}
 
 	LogStep("数据库查询结果", map[string]interface{}{
@@ -846,7 +845,7 @@ func OrderListHandler(w http.ResponseWriter, r *http.Request) {
 		})
 
 		// 临时调试：尝试获取所有订单来检查数据库状态
-		allOrdersDebug, allTotalDebug, allErrDebug := dao.OrderImp.GetOrdersByUserId(int32(userId), 1, 10)
+		allOrdersDebug, allTotalDebug, allErrDebug := dao.OrderImp.GetOrdersByUserId(userId, 1, 10)
 		LogStep("调试：检查用户所有订单", map[string]interface{}{
 			"userId":    userId,
 			"allOrders": len(allOrdersDebug),

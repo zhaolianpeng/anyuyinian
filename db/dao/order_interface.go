@@ -10,7 +10,7 @@ type OrderInterface interface {
 	CreateOrder(order *model.OrderModel) error
 	GetOrderById(id int32) (*model.OrderModel, error)
 	GetOrderByOrderNo(orderNo string) (*model.OrderModel, error)
-	GetOrdersByUserId(userId int32, page, pageSize int) ([]*model.OrderModel, int64, error)
+	GetOrdersByUserId(userId string, page, pageSize int) ([]*model.OrderModel, int64, error)
 	UpdateOrder(order *model.OrderModel) error
 	UpdateOrderStatus(id int32, status int) error
 	UpdatePayStatus(id int32, payStatus int, payTime *time.Time, transactionId string) error
@@ -18,7 +18,7 @@ type OrderInterface interface {
 	GetExpiredOrders() ([]*model.OrderModel, error)
 	BatchCancelExpiredOrders() (int64, error)
 	GetOrdersByStatus(status int, page, pageSize int) ([]*model.OrderModel, int64, error)
-	GetOrdersByStatusAndUserId(status int, userId int32, page, pageSize int) ([]*model.OrderModel, int64, error)
+	GetOrdersByStatusAndUserId(status int, userId string, page, pageSize int) ([]*model.OrderModel, int64, error)
 }
 
 // OrderInterfaceImp 订单数据实现

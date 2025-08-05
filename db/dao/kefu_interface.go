@@ -7,11 +7,11 @@ import (
 // KefuInterface 客服数据接口
 type KefuInterface interface {
 	CreateMessage(message *model.KefuMessageModel) error
-	GetMessagesByUserId(userId int32, page, pageSize int) ([]*model.KefuMessageModel, int64, error)
+	GetMessagesByUserId(userId string, page, pageSize int) ([]*model.KefuMessageModel, int64, error)
 	GetMessageById(id int32) (*model.KefuMessageModel, error)
 	UpdateMessage(message *model.KefuMessageModel) error
 	UpdateMessageStatus(id int32, status int) error
-	ReplyMessage(id int32, replyContent string, replyUserId int32) error
+	ReplyMessage(id int32, replyContent string, replyUserId string) error
 
 	// FAQ相关
 	GetFaqsByCategory(category string, page, pageSize int) ([]*model.FaqModel, int64, error)

@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strconv"
 
 	"wxcloudrun-golang/db/dao"
 	"wxcloudrun-golang/db/model"
@@ -34,7 +33,7 @@ type ReferralConfigResponse struct {
 
 // ApplyCashoutRequest 申请提现请求
 type ApplyCashoutRequest struct {
-	UserId  int32   `json:"userId"`
+	UserId  string  `json:"userId"`
 	Amount  float64 `json:"amount"`
 	Method  string  `json:"method"` // wechat, alipay, bank
 	Account string  `json:"account"`
@@ -54,20 +53,17 @@ func ReferralQrCodeHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userId, err := strconv.Atoi(userIdStr)
-	if err != nil {
-		http.Error(w, "无效的用户ID", http.StatusBadRequest)
-		return
-	}
+	// 直接使用字符串类型的userId
+	userId := userIdStr
 
 	// 获取或创建推荐关系
-	referral, err := dao.ReferralImp.GetReferralByUserId(int32(userId))
+	referral, err := dao.ReferralImp.GetReferralByUserId(userId)
 	if err != nil {
 		// 如果不存在，创建一个新的推荐关系
 		referral = &model.ReferralModel{
-			UserId:     int32(userId),
+			UserId:     userId,
 			ReferrerId: 0, // 暂时设为0，表示没有推荐人
-			QrCodeUrl:  generateQrCodeUrl(int32(userId)),
+			QrCodeUrl:  generateQrCodeUrl(userId),
 			Status:     1,
 		}
 		if err := dao.ReferralImp.CreateReferral(referral); err != nil {
@@ -106,14 +102,11 @@ func ReferralReportHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userId, err := strconv.Atoi(userIdStr)
-	if err != nil {
-		http.Error(w, "无效的用户ID", http.StatusBadRequest)
-		return
-	}
+	// 直接使用字符串类型的userId
+	userId := userIdStr
 
 	// 获取推荐关系
-	referral, err := dao.ReferralImp.GetReferralByUserId(int32(userId))
+	referral, err := dao.ReferralImp.GetReferralByUserId(userId)
 	if err != nil {
 		response := &ReferralResponse{
 			Code:     -1,
@@ -131,7 +124,7 @@ func ReferralReportHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 获取我推荐的用户列表
-	referrals, _, err := dao.ReferralImp.GetReferralsByReferrerId(int32(userId), 1, 100)
+	referrals, _, err := dao.ReferralImp.GetReferralsByReferrerId(userId, 1, 100)
 	if err != nil {
 		response := &ReferralResponse{
 			Code:     -1,
@@ -143,7 +136,7 @@ func ReferralReportHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 获取佣金记录
-	commissions, _, err := dao.ReferralImp.GetCommissionsByUserId(int32(userId), 1, 100)
+	commissions, _, err := dao.ReferralImp.GetCommissionsByUserId(userId, 1, 100)
 	if err != nil {
 		response := &ReferralResponse{
 			Code:     -1,
@@ -215,7 +208,7 @@ func ApplyCashoutHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 验证参数
-	if req.UserId == 0 || req.Amount <= 0 || req.Method == "" || req.Account == "" {
+	if req.UserId == "" || req.Amount <= 0 || req.Method == "" || req.Account == "" {
 		http.Error(w, "缺少必要参数", http.StatusBadRequest)
 		return
 	}
@@ -295,6 +288,6 @@ func ApplyCashoutHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // 生成二维码URL
-func generateQrCodeUrl(userId int32) string {
-	return fmt.Sprintf("https://example.com/qrcode/user_%d.png", userId)
+func generateQrCodeUrl(userId string) string {
+	return fmt.Sprintf("https://example.com/qrcode/user_%s.png", userId)
 }

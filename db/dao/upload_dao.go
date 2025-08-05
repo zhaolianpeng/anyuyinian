@@ -25,7 +25,7 @@ func (imp *UploadInterfaceImp) GetFileById(id int32) (*model.FileModel, error) {
 }
 
 // GetFilesByUserId 根据用户ID获取文件列表
-func (imp *UploadInterfaceImp) GetFilesByUserId(userId int32, limit int) ([]*model.FileModel, error) {
+func (imp *UploadInterfaceImp) GetFilesByUserId(userId string, limit int) ([]*model.FileModel, error) {
 	var files []*model.FileModel
 	cli := db.Get()
 	err := cli.Table(fileTableName).

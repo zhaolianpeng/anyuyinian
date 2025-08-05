@@ -22,7 +22,7 @@ func (imp *KefuInterfaceImp) CreateMessage(message *model.KefuMessageModel) erro
 }
 
 // GetMessagesByUserId 根据用户ID获取消息列表（分页）
-func (imp *KefuInterfaceImp) GetMessagesByUserId(userId int32, page, pageSize int) ([]*model.KefuMessageModel, int64, error) {
+func (imp *KefuInterfaceImp) GetMessagesByUserId(userId string, page, pageSize int) ([]*model.KefuMessageModel, int64, error) {
 	var messages []*model.KefuMessageModel
 	var total int64
 	cli := db.Get()
@@ -70,7 +70,7 @@ func (imp *KefuInterfaceImp) UpdateMessageStatus(id int32, status int) error {
 }
 
 // ReplyMessage 回复消息
-func (imp *KefuInterfaceImp) ReplyMessage(id int32, replyContent string, replyUserId int32) error {
+func (imp *KefuInterfaceImp) ReplyMessage(id int32, replyContent string, replyUserId string) error {
 	cli := db.Get()
 	replyTime := time.Now()
 	return cli.Table(kefuMessageTableName).Where("id = ?", id).Updates(map[string]interface{}{

@@ -7,18 +7,18 @@ import (
 // ReferralInterface 推荐数据接口
 type ReferralInterface interface {
 	CreateReferral(referral *model.ReferralModel) error
-	GetReferralByUserId(userId int32) (*model.ReferralModel, error)
-	GetReferralsByReferrerId(referrerId int32, page, pageSize int) ([]*model.ReferralModel, int64, error)
+	GetReferralByUserId(userId string) (*model.ReferralModel, error)
+	GetReferralsByReferrerId(referrerId string, page, pageSize int) ([]*model.ReferralModel, int64, error)
 	UpdateReferral(referral *model.ReferralModel) error
 
 	// 佣金相关
 	CreateCommission(commission *model.CommissionModel) error
-	GetCommissionsByUserId(userId int32, page, pageSize int) ([]*model.CommissionModel, int64, error)
+	GetCommissionsByUserId(userId string, page, pageSize int) ([]*model.CommissionModel, int64, error)
 	UpdateCommissionStatus(id int32, status int) error
 
 	// 提现相关
 	CreateCashout(cashout *model.CashoutModel) error
-	GetCashoutsByUserId(userId int32, page, pageSize int) ([]*model.CashoutModel, int64, error)
+	GetCashoutsByUserId(userId string, page, pageSize int) ([]*model.CashoutModel, int64, error)
 	UpdateCashoutStatus(id int32, status int) error
 }
 

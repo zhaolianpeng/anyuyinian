@@ -9,7 +9,7 @@ type UploadInterface interface {
 	// 文件相关
 	CreateFile(file *model.FileModel) error
 	GetFileById(id int32) (*model.FileModel, error)
-	GetFilesByUserId(userId int32, limit int) ([]*model.FileModel, error)
+	GetFilesByUserId(userId string, limit int) ([]*model.FileModel, error)
 	GetFilesByCategory(category string, limit int) ([]*model.FileModel, error)
 	UpdateFile(file *model.FileModel) error
 	DeleteFile(id int32) error

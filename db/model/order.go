@@ -6,7 +6,7 @@ import "time"
 type OrderModel struct {
 	Id               int32      `gorm:"column:id;primaryKey;autoIncrement" json:"id"`
 	OrderNo          string     `gorm:"column:orderNo;uniqueIndex;not null" json:"orderNo"`
-	UserId           int32      `gorm:"column:userId;not null" json:"userId"`
+	UserId           string     `gorm:"column:userId;not null;type:varchar(24)" json:"userId"`
 	ServiceId        int32      `gorm:"column:serviceId;not null" json:"serviceId"`
 	PatientId        int32      `gorm:"column:patientId;not null" json:"patientId"`                // 患者ID
 	AddressId        int32      `gorm:"column:addressId;not null" json:"addressId"`                // 地址ID

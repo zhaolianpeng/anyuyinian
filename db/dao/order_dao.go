@@ -33,7 +33,7 @@ func (imp *OrderInterfaceImp) GetOrderByOrderNo(orderNo string) (*model.OrderMod
 }
 
 // GetOrdersByUserId 根据用户ID获取订单列表（分页）
-func (imp *OrderInterfaceImp) GetOrdersByUserId(userId int32, page, pageSize int) ([]*model.OrderModel, int64, error) {
+func (imp *OrderInterfaceImp) GetOrdersByUserId(userId string, page, pageSize int) ([]*model.OrderModel, int64, error) {
 	var orders []*model.OrderModel
 	var total int64
 	cli := db.Get()
@@ -153,8 +153,8 @@ func (imp *OrderInterfaceImp) GetOrdersByStatus(status int, page, pageSize int) 
 	return orders, total, err
 }
 
-// GetOrdersByStatusAndUserId 根据状态和用户ID获取订单列表
-func (imp *OrderInterfaceImp) GetOrdersByStatusAndUserId(status int, userId int32, page, pageSize int) ([]*model.OrderModel, int64, error) {
+// GetOrdersByStatusAndUserId 根据状态和用户ID获取订单列表（分页）
+func (imp *OrderInterfaceImp) GetOrdersByStatusAndUserId(status int, userId string, page, pageSize int) ([]*model.OrderModel, int64, error) {
 	var orders []*model.OrderModel
 	var total int64
 	cli := db.Get()

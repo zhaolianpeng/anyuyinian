@@ -21,7 +21,7 @@ func (imp *ReferralInterfaceImp) CreateReferral(referral *model.ReferralModel) e
 }
 
 // GetReferralByUserId 根据用户ID获取推荐关系
-func (imp *ReferralInterfaceImp) GetReferralByUserId(userId int32) (*model.ReferralModel, error) {
+func (imp *ReferralInterfaceImp) GetReferralByUserId(userId string) (*model.ReferralModel, error) {
 	var referral = new(model.ReferralModel)
 	cli := db.Get()
 	err := cli.Table(referralTableName).Where("userId = ? AND status = ?", userId, 1).First(referral).Error
@@ -29,7 +29,7 @@ func (imp *ReferralInterfaceImp) GetReferralByUserId(userId int32) (*model.Refer
 }
 
 // GetReferralsByReferrerId 根据推荐人ID获取推荐列表（分页）
-func (imp *ReferralInterfaceImp) GetReferralsByReferrerId(referrerId int32, page, pageSize int) ([]*model.ReferralModel, int64, error) {
+func (imp *ReferralInterfaceImp) GetReferralsByReferrerId(referrerId string, page, pageSize int) ([]*model.ReferralModel, int64, error) {
 	var referrals []*model.ReferralModel
 	var total int64
 	cli := db.Get()
@@ -70,7 +70,7 @@ func (imp *ReferralInterfaceImp) CreateCommission(commission *model.CommissionMo
 }
 
 // GetCommissionsByUserId 根据用户ID获取佣金记录（分页）
-func (imp *ReferralInterfaceImp) GetCommissionsByUserId(userId int32, page, pageSize int) ([]*model.CommissionModel, int64, error) {
+func (imp *ReferralInterfaceImp) GetCommissionsByUserId(userId string, page, pageSize int) ([]*model.CommissionModel, int64, error) {
 	var commissions []*model.CommissionModel
 	var total int64
 	cli := db.Get()
@@ -117,7 +117,7 @@ func (imp *ReferralInterfaceImp) CreateCashout(cashout *model.CashoutModel) erro
 }
 
 // GetCashoutsByUserId 根据用户ID获取提现记录（分页）
-func (imp *ReferralInterfaceImp) GetCashoutsByUserId(userId int32, page, pageSize int) ([]*model.CashoutModel, int64, error) {
+func (imp *ReferralInterfaceImp) GetCashoutsByUserId(userId string, page, pageSize int) ([]*model.CashoutModel, int64, error) {
 	var cashouts []*model.CashoutModel
 	var total int64
 	cli := db.Get()

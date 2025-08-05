@@ -14,8 +14,8 @@ type FileModel struct {
 	MimeType     string    `gorm:"column:mimeType" json:"mimeType"`
 	Category     string    `gorm:"column:category" json:"category"` // 文件分类：image, document, video等
 	Description  string    `gorm:"column:description" json:"description"`
-	UserId       int32     `gorm:"column:userId" json:"userId"`           // 上传用户ID
-	Status       int       `gorm:"column:status;default:1" json:"status"` // 1-正常，0-删除
+	UserId       string    `gorm:"column:userId;type:varchar(24)" json:"userId"` // 上传用户ID
+	Status       int       `gorm:"column:status;default:1" json:"status"`        // 1-正常，0-删除
 	CreatedAt    time.Time `gorm:"column:createdAt" json:"createdAt"`
 	UpdatedAt    time.Time `gorm:"column:updatedAt" json:"updatedAt"`
 }

@@ -19,7 +19,7 @@ type KefuResponse struct {
 
 // SendMessageRequest 发送消息请求
 type SendMessageRequest struct {
-	UserId     int32    `json:"userId"`
+	UserId     string   `json:"userId"`
 	UserName   string   `json:"userName"`
 	UserAvatar string   `json:"userAvatar"`
 	Content    string   `json:"content"`
@@ -63,8 +63,8 @@ func SendMessageHandler(w http.ResponseWriter, r *http.Request) {
 	})
 
 	// 验证参数
-	if req.UserId == 0 || req.Content == "" {
-		LogError("缺少必要参数", fmt.Errorf("userId=%d, content=%s", req.UserId, req.Content))
+	if req.UserId == "" || req.Content == "" {
+		LogError("缺少必要参数", fmt.Errorf("userId=%s, content=%s", req.UserId, req.Content))
 		http.Error(w, "缺少必要参数", http.StatusBadRequest)
 		return
 	}

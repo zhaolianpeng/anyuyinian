@@ -134,7 +134,7 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 	LogStep("文件验证通过", nil)
 
 	// 保存文件
-	fileInfo, err := saveFile(file, header, int32(userId), category, description)
+	fileInfo, err := saveFile(file, header, userIdStr, category, description)
 	if err != nil {
 		LogError("保存文件失败", err)
 		http.Error(w, "保存文件失败: "+err.Error(), http.StatusInternalServerError)
@@ -186,7 +186,7 @@ func validateFile(header *multipart.FileHeader) error {
 }
 
 // saveFile 保存文件
-func saveFile(file multipart.File, header *multipart.FileHeader, userId int32, category, description string) (*FileInfo, error) {
+func saveFile(file multipart.File, header *multipart.FileHeader, userId string, category, description string) (*FileInfo, error) {
 	LogStep("开始保存文件", map[string]string{"originalName": header.Filename, "size": fmt.Sprintf("%d", header.Size)})
 
 	// 生成文件名
@@ -264,7 +264,7 @@ func saveFile(file multipart.File, header *multipart.FileHeader, userId int32, c
 	// 创建数据库记录
 	dbFile := &model.FileModel{
 		FileName:     fileName,
-		OriginalName: originalName,
+		OriginalName: header.Filename,
 		FilePath:     fileUrl, // 对于COS，FilePath存储URL
 		FileUrl:      fileUrl,
 		FileSize:     fileSize,
@@ -435,14 +435,8 @@ func GetFileListHandler(w http.ResponseWriter, r *http.Request) {
 	if userIdStr != "" {
 		// 根据用户ID查询
 		LogStep("根据用户ID查询文件", map[string]interface{}{"userId": userIdStr, "limit": limit})
-		userId, err := strconv.Atoi(userIdStr)
-		if err != nil {
-			LogError("无效的用户ID", err)
-			http.Error(w, "无效的用户ID", http.StatusBadRequest)
-			return
-		}
-		LogDBOperation("查询", "files", map[string]interface{}{"userId": userId, "limit": limit})
-		files, err = dao.UploadImp.GetFilesByUserId(int32(userId), limit)
+		LogDBOperation("查询", "files", map[string]interface{}{"userId": userIdStr, "limit": limit})
+		files, err = dao.UploadImp.GetFilesByUserId(userIdStr, limit)
 		LogDBResult("查询", "files", files, err)
 	} else if category != "" {
 		// 根据分类查询
