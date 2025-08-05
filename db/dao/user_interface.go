@@ -8,6 +8,7 @@ import (
 type UserInterface interface {
 	GetUserByOpenId(openId string) (*model.UserModel, error)
 	GetUserById(id int32) (*model.UserModel, error)
+	GetUserByUserId(userId string) (*model.UserModel, error)
 	CreateUser(user *model.UserModel) error
 	UpdateUser(user *model.UserModel) error
 	UpsertUser(user *model.UserModel) error

@@ -5,7 +5,7 @@ import "time"
 // UserAddressModel 用户地址模型
 type UserAddressModel struct {
 	Id        int32     `gorm:"column:id;primaryKey;autoIncrement" json:"id"`
-	UserId    int32     `gorm:"column:userId;not null" json:"userId"`
+	UserId    string    `gorm:"column:userId;not null;type:varchar(24)" json:"userId"`
 	Name      string    `gorm:"column:name;not null" json:"name"`
 	Phone     string    `gorm:"column:phone;not null" json:"phone"`
 	Province  string    `gorm:"column:province" json:"province"`
@@ -21,7 +21,7 @@ type UserAddressModel struct {
 // PatientModel 就诊人信息模型
 type PatientModel struct {
 	Id        int32     `gorm:"column:id;primaryKey;autoIncrement" json:"id"`
-	UserId    int32     `gorm:"column:userId;not null" json:"userId"`
+	UserId    string    `gorm:"column:userId;not null;type:varchar(24)" json:"userId"`
 	Name      string    `gorm:"column:name;not null" json:"name"`
 	IdCard    string    `gorm:"column:idCard" json:"idCard"`
 	Phone     string    `gorm:"column:phone" json:"phone"`

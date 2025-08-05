@@ -24,6 +24,14 @@ func (imp *UserInterfaceImp) GetUserById(id int32) (*model.UserModel, error) {
 	return user, err
 }
 
+// GetUserByUserId 根据UserId查询用户
+func (imp *UserInterfaceImp) GetUserByUserId(userId string) (*model.UserModel, error) {
+	var user = new(model.UserModel)
+	cli := db.Get()
+	err := cli.Table(userTableName).Where("userId = ?", userId).First(user).Error
+	return user, err
+}
+
 // CreateUser 创建用户
 func (imp *UserInterfaceImp) CreateUser(user *model.UserModel) error {
 	cli := db.Get()

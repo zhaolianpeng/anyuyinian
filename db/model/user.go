@@ -5,6 +5,7 @@ import "time"
 // UserModel 用户模型
 type UserModel struct {
 	Id          int32     `gorm:"column:id;primaryKey;autoIncrement" json:"id"`
+	UserId      string    `gorm:"column:userId;uniqueIndex;type:varchar(24);not null" json:"userId"`
 	OpenId      string    `gorm:"column:openId;uniqueIndex;not null" json:"openId"`
 	UnionId     string    `gorm:"column:unionId" json:"unionId"`
 	NickName    string    `gorm:"column:nickName" json:"nickName"`

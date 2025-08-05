@@ -28,7 +28,7 @@ func (imp *UserExtendInterfaceImp) GetAddressById(id int32) (*model.UserAddressM
 }
 
 // GetAddressesByUserId 根据用户ID获取地址列表
-func (imp *UserExtendInterfaceImp) GetAddressesByUserId(userId int32) ([]*model.UserAddressModel, error) {
+func (imp *UserExtendInterfaceImp) GetAddressesByUserId(userId string) ([]*model.UserAddressModel, error) {
 	var addresses []*model.UserAddressModel
 	cli := db.Get()
 	err := cli.Table(addressTableName).
@@ -52,7 +52,7 @@ func (imp *UserExtendInterfaceImp) DeleteAddress(id int32) error {
 }
 
 // SetDefaultAddress 设置默认地址
-func (imp *UserExtendInterfaceImp) SetDefaultAddress(userId int32, addressId int32) error {
+func (imp *UserExtendInterfaceImp) SetDefaultAddress(userId string, addressId int32) error {
 	cli := db.Get()
 
 	// 先取消该用户的所有默认地址
@@ -88,7 +88,7 @@ func (imp *UserExtendInterfaceImp) GetPatientById(id int32) (*model.PatientModel
 }
 
 // GetPatientsByUserId 根据用户ID获取就诊人列表
-func (imp *UserExtendInterfaceImp) GetPatientsByUserId(userId int32) ([]*model.PatientModel, error) {
+func (imp *UserExtendInterfaceImp) GetPatientsByUserId(userId string) ([]*model.PatientModel, error) {
 	var patients []*model.PatientModel
 	cli := db.Get()
 	err := cli.Table(patientTableName).
@@ -112,7 +112,7 @@ func (imp *UserExtendInterfaceImp) DeletePatient(id int32) error {
 }
 
 // SetDefaultPatient 设置默认就诊人
-func (imp *UserExtendInterfaceImp) SetDefaultPatient(userId int32, patientId int32) error {
+func (imp *UserExtendInterfaceImp) SetDefaultPatient(userId string, patientId int32) error {
 	cli := db.Get()
 
 	// 先取消该用户的所有默认就诊人

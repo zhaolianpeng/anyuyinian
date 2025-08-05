@@ -21,6 +21,7 @@ type UserResponse struct {
 // UserInfo 用户信息
 type UserInfo struct {
 	Id        int32  `json:"id"`
+	UserId    string `json:"userId"`
 	OpenId    string `json:"openId"`
 	NickName  string `json:"nickName"`
 	AvatarUrl string `json:"avatarUrl"`
@@ -34,14 +35,14 @@ type UserInfo struct {
 
 // BindPhoneRequest 绑定手机号请求
 type BindPhoneRequest struct {
-	UserId int32  `json:"userId"`
+	UserId string `json:"userId"`
 	Phone  string `json:"phone"`
 	Code   string `json:"code"` // 验证码
 }
 
 // UpdateUserInfoRequest 更新用户信息请求
 type UpdateUserInfoRequest struct {
-	UserId    int32  `json:"userId"`
+	UserId    string `json:"userId"`
 	NickName  string `json:"nickName,omitempty"`
 	AvatarUrl string `json:"avatarUrl,omitempty"`
 	Gender    int    `json:"gender,omitempty"`
@@ -50,7 +51,7 @@ type UpdateUserInfoRequest struct {
 // AddressRequest 地址请求
 type AddressRequest struct {
 	Id        int32  `json:"id,omitempty"`
-	UserId    int32  `json:"userId"`
+	UserId    string `json:"userId"`
 	Name      string `json:"name"`
 	Phone     string `json:"phone"`
 	Province  string `json:"province"`
@@ -63,7 +64,7 @@ type AddressRequest struct {
 // PatientRequest 就诊人请求
 type PatientRequest struct {
 	Id        int32  `json:"id,omitempty"`
-	UserId    int32  `json:"userId"`
+	UserId    string `json:"userId"`
 	Name      string `json:"name"`
 	IdCard    string `json:"idCard"`
 	Phone     string `json:"phone"`
@@ -76,7 +77,7 @@ type PatientRequest struct {
 // PatientResponse 就诊人响应（包含计算出的年龄）
 type PatientResponse struct {
 	Id        int32     `json:"id"`
-	UserId    int32     `json:"userId"`
+	UserId    string    `json:"userId"`
 	Name      string    `json:"name"`
 	IdCard    string    `json:"idCard"`
 	Phone     string    `json:"phone"`
@@ -172,19 +173,12 @@ func GetUserInfoHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userId, err := strconv.Atoi(userIdStr)
-	if err != nil {
-		LogError("用户ID格式错误", err)
-		http.Error(w, "无效的用户ID", http.StatusBadRequest)
-		return
-	}
-
 	LogStep("开始查询用户信息", map[string]interface{}{
-		"userId": userId,
+		"userId": userIdStr,
 	})
 
-	// 获取用户信息
-	user, err := dao.UserImp.GetUserById(int32(userId))
+	// 获取用户信息 - 使用新的UserId字段查询
+	user, err := dao.UserImp.GetUserByUserId(userIdStr)
 	if err != nil {
 		LogError("数据库查询用户信息失败", err)
 		response := &UserResponse{
@@ -197,13 +191,14 @@ func GetUserInfoHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	LogStep("用户信息查询成功", map[string]interface{}{
-		"userId":   user.Id,
+		"userId":   user.UserId,
 		"openId":   user.OpenId,
 		"nickName": user.NickName,
 	})
 
 	userInfo := &UserInfo{
 		Id:        user.Id,
+		UserId:    user.UserId,
 		OpenId:    user.OpenId,
 		NickName:  user.NickName,
 		AvatarUrl: user.AvatarUrl,
@@ -221,7 +216,7 @@ func GetUserInfoHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	LogStep("准备返回用户信息", map[string]interface{}{
-		"userId":   userInfo.Id,
+		"userId":   userInfo.UserId,
 		"nickName": userInfo.NickName,
 		"phone":    userInfo.Phone,
 	})
@@ -230,7 +225,7 @@ func GetUserInfoHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 
 	LogInfo("用户信息获取成功", map[string]interface{}{
-		"userId": userInfo.Id,
+		"userId": userInfo.UserId,
 	})
 }
 
@@ -261,8 +256,8 @@ func BindPhoneHandler(w http.ResponseWriter, r *http.Request) {
 	})
 
 	// 验证参数
-	if req.UserId == 0 || req.Phone == "" || req.Code == "" {
-		LogError("缺少必要参数", fmt.Errorf("userId=%d, phone=%s, code=%s", req.UserId, req.Phone, req.Code))
+	if req.UserId == "" || req.Phone == "" || req.Code == "" {
+		LogError("缺少必要参数", fmt.Errorf("userId=%s, phone=%s, code=%s", req.UserId, req.Phone, req.Code))
 		http.Error(w, "缺少必要参数", http.StatusBadRequest)
 		return
 	}
@@ -291,7 +286,7 @@ func BindPhoneHandler(w http.ResponseWriter, r *http.Request) {
 		"userId": req.UserId,
 	})
 
-	user, err := dao.UserImp.GetUserById(req.UserId)
+	user, err := dao.UserImp.GetUserByUserId(req.UserId)
 	if err != nil {
 		LogError("数据库查询用户信息失败", err)
 		response := &UserResponse{
@@ -304,14 +299,14 @@ func BindPhoneHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	LogStep("用户信息查询成功", map[string]interface{}{
-		"userId":   user.Id,
+		"userId":   user.UserId,
 		"nickName": user.NickName,
 		"oldPhone": user.Phone,
 	})
 
 	// 更新用户手机号
 	LogStep("开始更新用户手机号", map[string]interface{}{
-		"userId":   user.Id,
+		"userId":   user.UserId,
 		"oldPhone": user.Phone,
 		"newPhone": req.Phone,
 	})
@@ -331,7 +326,7 @@ func BindPhoneHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	LogStep("用户手机号更新成功", map[string]interface{}{
-		"userId":   user.Id,
+		"userId":   user.UserId,
 		"newPhone": req.Phone,
 	})
 
@@ -393,18 +388,11 @@ func handleGetAddresses(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userId, err := strconv.Atoi(userIdStr)
-	if err != nil {
-		LogError("用户ID格式错误", err)
-		http.Error(w, "无效的用户ID", http.StatusBadRequest)
-		return
-	}
-
 	LogStep("开始查询地址列表", map[string]interface{}{
-		"userId": userId,
+		"userId": userIdStr,
 	})
 
-	addresses, err := dao.UserExtendImp.GetAddressesByUserId(int32(userId))
+	addresses, err := dao.UserExtendImp.GetAddressesByUserId(userIdStr)
 	if err != nil {
 		LogError("数据库查询地址列表失败", err)
 		response := &UserResponse{
@@ -417,7 +405,7 @@ func handleGetAddresses(w http.ResponseWriter, r *http.Request) {
 	}
 
 	LogStep("地址列表查询成功", map[string]interface{}{
-		"userId":       userId,
+		"userId":       userIdStr,
 		"addressCount": len(addresses),
 	})
 
@@ -429,7 +417,7 @@ func handleGetAddresses(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 
 	LogInfo("地址列表获取成功", map[string]interface{}{
-		"userId":       userId,
+		"userId":       userIdStr,
 		"addressCount": len(addresses),
 	})
 }
@@ -619,13 +607,7 @@ func handleGetPatients(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userId, err := strconv.Atoi(userIdStr)
-	if err != nil {
-		http.Error(w, "无效的用户ID", http.StatusBadRequest)
-		return
-	}
-
-	patients, err := dao.UserExtendImp.GetPatientsByUserId(int32(userId))
+	patients, err := dao.UserExtendImp.GetPatientsByUserId(userIdStr)
 	if err != nil {
 		response := &UserResponse{
 			Code:     -1,
@@ -802,7 +784,7 @@ func UpdateUserInfoHandler(w http.ResponseWriter, r *http.Request) {
 	})
 
 	// 验证用户是否存在
-	user, err := dao.UserImp.GetUserById(req.UserId)
+	user, err := dao.UserImp.GetUserByUserId(req.UserId)
 	if err != nil {
 		LogError("查询用户失败", err)
 		response := &UserResponse{
@@ -837,7 +819,7 @@ func UpdateUserInfoHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	LogStep("用户信息更新成功", map[string]interface{}{
-		"userId":    user.Id,
+		"userId":    user.UserId,
 		"nickName":  user.NickName,
 		"avatarUrl": user.AvatarUrl,
 		"gender":    user.Gender,
@@ -851,6 +833,6 @@ func UpdateUserInfoHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 
 	LogInfo("更新用户信息成功", map[string]interface{}{
-		"userId": user.Id,
+		"userId": user.UserId,
 	})
 }

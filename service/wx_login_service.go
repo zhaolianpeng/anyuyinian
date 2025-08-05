@@ -12,6 +12,7 @@ import (
 	"wxcloudrun-golang/config"
 	"wxcloudrun-golang/db/dao"
 	"wxcloudrun-golang/db/model"
+	"wxcloudrun-golang/utils"
 
 	"gorm.io/gorm"
 )
@@ -196,6 +197,7 @@ func processUserLogin(wxResp *WxLoginResponse, req *WxLoginRequest) (*WxLoginRes
 		LogStep("用户不存在，开始创建新用户", map[string]string{"openId": wxResp.OpenId})
 		// 新用户，创建用户记录
 		user = &model.UserModel{
+			UserId:     utils.GenerateUserID(), // 生成随机UserId
 			OpenId:     wxResp.OpenId,
 			UnionId:    wxResp.UnionId,
 			SessionKey: wxResp.SessionKey,
@@ -215,9 +217,9 @@ func processUserLogin(wxResp *WxLoginResponse, req *WxLoginRequest) (*WxLoginRes
 		}
 		LogDBResult("创建", "users", user, nil)
 		isNewUser = true
-		LogStep("新用户创建成功", map[string]interface{}{"userId": user.Id, "isNewUser": isNewUser})
+		LogStep("新用户创建成功", map[string]interface{}{"userId": user.UserId, "isNewUser": isNewUser})
 	} else {
-		LogStep("用户已存在，开始更新用户信息", map[string]interface{}{"userId": existingUser.Id, "openId": existingUser.OpenId})
+		LogStep("用户已存在，开始更新用户信息", map[string]interface{}{"userId": existingUser.UserId, "openId": existingUser.OpenId})
 		// 老用户，更新登录时间和session_key
 		existingUser.SessionKey = wxResp.SessionKey
 		existingUser.LastLoginAt = time.Now()
@@ -262,13 +264,14 @@ func processUserLogin(wxResp *WxLoginResponse, req *WxLoginRequest) (*WxLoginRes
 		}
 		LogDBResult("更新", "users", existingUser, nil)
 		user = existingUser
-		LogStep("用户信息更新成功", map[string]interface{}{"userId": user.Id, "isNewUser": isNewUser})
+		LogStep("用户信息更新成功", map[string]interface{}{"userId": user.UserId, "isNewUser": isNewUser})
 	}
 
 	LogStep("开始构建返回数据", nil)
 	// 构建返回数据（不包含敏感信息如session_key）
 	userData := map[string]interface{}{
 		"id":          user.Id,
+		"userId":      user.UserId, // 使用新的UserId字段
 		"openId":      user.OpenId,
 		"nickName":    user.NickName,
 		"avatarUrl":   user.AvatarUrl,
@@ -280,8 +283,7 @@ func processUserLogin(wxResp *WxLoginResponse, req *WxLoginRequest) (*WxLoginRes
 		"language":    user.Language,
 		"lastLoginAt": user.LastLoginAt,
 		"isNewUser":   isNewUser,
-		"token":       generateToken(user.Id), // 添加token生成
-		"userId":      user.Id,                // 添加userId
+		"token":       generateToken(user.UserId), // 使用UserId生成token
 	}
 
 	result := &WxLoginResult{
@@ -293,6 +295,6 @@ func processUserLogin(wxResp *WxLoginResponse, req *WxLoginRequest) (*WxLoginRes
 }
 
 // generateToken 生成简单的token
-func generateToken(userId int32) string {
-	return fmt.Sprintf("token_%d_%d", userId, time.Now().Unix())
+func generateToken(userId string) string {
+	return fmt.Sprintf("token_%s_%d", userId, time.Now().Unix())
 }
