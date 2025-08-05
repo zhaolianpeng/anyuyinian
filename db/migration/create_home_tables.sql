@@ -73,12 +73,12 @@ INSERT INTO Banners (title, imageUrl, linkUrl, sort, status) VALUES
 
 -- 插入导航示例数据
 INSERT INTO Navigations (name, icon, linkUrl, sort, status) VALUES
-('预约挂号', '/images/nav/appointment.png', '/pages/appointment', 1, 1),
-('在线问诊', '/images/nav/consultation.png', '/pages/consultation', 2, 1),
-('健康档案', '/images/nav/health-record.png', '/pages/health-record', 3, 1),
-('检查报告', '/images/nav/report.png', '/pages/report', 4, 1),
-('药品配送', '/images/nav/medicine.png', '/pages/medicine', 5, 1),
-('健康资讯', '/images/nav/news.png', '/pages/news', 6, 1),
+('服务预约', '/images/nav/appointment.png', '/pages/service/list', 1, 1),
+('我的订单', '/images/nav/consultation.png', '/pages/order/list', 2, 1),
+('个人中心', '/images/nav/health-record.png', '/pages/user/profile', 3, 1),
+('客服咨询', '/images/nav/report.png', '/pages/kefu/chat', 4, 1),
+('推荐中心', '/images/nav/medicine.png', '/pages/referral/center', 5, 1),
+('健康资讯', '/images/nav/news.png', '/pages/webview/webview?url=https://example.com/news', 6, 1),
 ('附近医院', '/images/nav/hospital.png', '/pages/hospital/list', 7, 1);
 
 -- 插入服务项示例数据
