@@ -115,7 +115,7 @@ func GetPromoterInfoHandler(w http.ResponseWriter, r *http.Request) {
 		// 如果不存在，创建一个新的推荐关系
 		referral = &model.ReferralModel{
 			UserId:     userIdStr,
-			ReferrerId: "", // 暂时设为空，表示没有推荐人
+			ReferrerId: nil, // 设为nil，表示没有推荐人
 			QrCodeUrl:  generateQrCodeUrl(userIdStr),
 			Status:     1,
 		}

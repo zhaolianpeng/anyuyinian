@@ -62,7 +62,7 @@ func ReferralQrCodeHandler(w http.ResponseWriter, r *http.Request) {
 		// 如果不存在，创建一个新的推荐关系
 		referral = &model.ReferralModel{
 			UserId:     userId,
-			ReferrerId: "", // 暂时设为空，表示没有推荐人
+			ReferrerId: nil, // 设为nil，表示没有推荐人
 			QrCodeUrl:  generateQrCodeUrl(userId),
 			Status:     1,
 		}
@@ -119,8 +119,8 @@ func ReferralReportHandler(w http.ResponseWriter, r *http.Request) {
 
 	// 获取推荐人信息（简化处理）
 	var referrer *model.UserModel
-	if referral.ReferrerId != "" {
-		referrer, _ = dao.UserImp.GetUserByUserId(referral.ReferrerId)
+	if referral.ReferrerId != nil && *referral.ReferrerId != "" {
+		referrer, _ = dao.UserImp.GetUserByUserId(*referral.ReferrerId)
 	}
 
 	// 获取我推荐的用户列表
