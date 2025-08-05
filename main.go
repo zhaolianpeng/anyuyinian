@@ -87,5 +87,16 @@ func main() {
 	// SSE路由（替代WebSocket）
 	http.HandleFunc("/sse", service.NewLogMiddleware(service.SSEHandler))
 
+	// 迁移服务相关接口
+	http.HandleFunc("/api/migration/generate_user_ids", service.NewLogMiddleware(service.GenerateUserIdHandler))
+	http.HandleFunc("/api/migration/migrate_users", service.NewLogMiddleware(service.MigrateUsersHandler))
+	http.HandleFunc("/api/migration/migrate_all_tables", service.NewLogMiddleware(service.MigrateAllTablesUserIdHandler))
+	http.HandleFunc("/api/migration/validate", service.NewLogMiddleware(service.ValidateUserIdsHandler))
+
+	// 紧急修复相关接口
+	http.HandleFunc("/api/emergency/fix_user_ids", service.NewLogMiddleware(service.EmergencyFixUserIdsHandler))
+	http.HandleFunc("/api/emergency/test_user_info", service.NewLogMiddleware(service.TestUserInfoHandler))
+	http.HandleFunc("/api/emergency/user_status", service.NewLogMiddleware(service.GetUserStatusHandler))
+
 	log.Fatal(http.ListenAndServe(":80", nil))
 }
