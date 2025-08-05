@@ -104,5 +104,13 @@ func main() {
 	http.HandleFunc("/api/emergency/test_user_info", service.NewLogMiddleware(service.TestUserInfoHandler))
 	http.HandleFunc("/api/emergency/user_status", service.NewLogMiddleware(service.GetUserStatusHandler))
 
+	// 管理员相关接口
+	http.HandleFunc("/api/admin/login", service.NewLogMiddleware(service.AdminLoginHandler))
+	http.HandleFunc("/api/admin/check-status", service.NewLogMiddleware(service.CheckAdminStatusHandler))
+	http.HandleFunc("/api/admin/users", service.NewLogMiddleware(service.GetAdminUsersHandler))
+	http.HandleFunc("/api/admin/orders", service.NewLogMiddleware(service.GetAdminOrdersHandler))
+	http.HandleFunc("/api/admin/set-admin", service.NewLogMiddleware(service.SetUserAsAdminHandler))
+	http.HandleFunc("/api/admin/remove-admin", service.NewLogMiddleware(service.RemoveAdminHandler))
+
 	log.Fatal(http.ListenAndServe(":80", nil))
 }
