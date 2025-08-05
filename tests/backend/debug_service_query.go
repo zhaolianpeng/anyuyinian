@@ -59,10 +59,10 @@ func main() {
 	fmt.Println("\n3. 测试API响应格式...")
 	for i, service := range services {
 		apiResponse := map[string]interface{}{
-			"id":          service.Id,
-			"serviceId":   service.ServiceItemId,
-			"name":        service.Name,
-			"description": service.Description,
+			"id":            service.Id,
+			"serviceitemid": service.ServiceItemId,
+			"name":          service.Name,
+			"description":   service.Description,
 		}
 		jsonData, _ := json.Marshal(apiResponse)
 		fmt.Printf("API响应 %d: %s\n", i+1, string(jsonData))

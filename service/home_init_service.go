@@ -269,14 +269,14 @@ func convertServicesToInterface(services []*model.ServiceModel) []interface{} {
 	result := make([]interface{}, len(services))
 	for i, service := range services {
 		result[i] = map[string]interface{}{
-			"id":          service.Id,
-			"serviceId":   service.ServiceItemId, // 使用数据库中的serviceitemid字段
-			"name":        service.Name,
-			"description": service.Description,
-			"icon":        service.Icon,
-			"imageUrl":    service.ImageUrl,
-			"linkUrl":     service.LinkUrl,
-			"sort":        service.Sort,
+			"id":            service.Id,
+			"serviceitemid": service.ServiceItemId, // 使用数据库中的serviceitemid字段
+			"name":          service.Name,
+			"description":   service.Description,
+			"icon":          service.Icon,
+			"imageUrl":      service.ImageUrl,
+			"linkUrl":       service.LinkUrl,
+			"sort":          service.Sort,
 		}
 	}
 	return result

@@ -52,9 +52,9 @@ func convertServicesToInterface(services []*model.ServiceModel) []interface{} {
     result := make([]interface{}, len(services))
     for i, service := range services {
         result[i] = map[string]interface{}{
-            "id":          service.Id,
-            "serviceId":   service.ServiceItemId, // 使用数据库中的serviceitemid字段
-            "name":        service.Name,
+            "id":            service.Id,
+            "serviceitemid": service.ServiceItemId, // 使用数据库中的serviceitemid字段
+            "name":          service.Name,
             // ... 其他字段
         }
     }
@@ -66,18 +66,18 @@ func convertServicesToInterface(services []*model.ServiceModel) []interface{} {
 
 #### 3.1 修改服务点击处理
 - **文件**: `miniprogram/pages/index/index.js`
-- **修改**: onServiceTap函数只使用serviceId进行跳转
+- **修改**: onServiceTap函数只使用serviceitemid进行跳转
 
 ```javascript
 onServiceTap(e) {
-  const { serviceId } = e.currentTarget.dataset
-  // 使用serviceId进行跳转
-  if (serviceId) {
+  const { serviceitemid } = e.currentTarget.dataset
+  // 使用serviceitemid进行跳转
+  if (serviceitemid) {
     wx.navigateTo({
-      url: `/pages/service/detail?id=${serviceId}`
+      url: `/pages/service/detail?id=${serviceitemid}`
     })
   } else {
-    console.error('serviceId不存在，无法跳转到服务详情页')
+    console.error('serviceitemid不存在，无法跳转到服务详情页')
     wx.showToast({
       title: '服务信息不完整',
       icon: 'none'
@@ -88,11 +88,11 @@ onServiceTap(e) {
 
 #### 3.2 修改WXML数据绑定
 - **文件**: `miniprogram/pages/index/index.wxml`
-- **修改**: 服务项只传递serviceId参数
+- **修改**: 服务项只传递serviceitemid参数
 
 ```xml
 <view wx:for="{{services}}" wx:key="id" class="service-item"
-      bindtap="onServiceTap" data-service-id="{{item.serviceId}}">
+      bindtap="onServiceTap" data-serviceitemid="{{item.serviceitemid}}">
 ```
 
 ### 4. 验证步骤
