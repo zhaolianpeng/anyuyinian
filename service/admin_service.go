@@ -272,7 +272,8 @@ func GetAdminOrdersHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 获取订单列表
-	orders, total, err := dao.AdminImp.GetVisibleOrders(adminUserId, page, pageSize)
+	adminImp := &dao.AdminImp{}
+	orders, total, err := adminImp.GetVisibleOrders(adminUserId, page, pageSize)
 	if err != nil {
 		LogError("获取订单列表失败", err)
 		response := &AdminResponse{
@@ -309,7 +310,7 @@ func GetAdminOrdersHandler(w http.ResponseWriter, r *http.Request) {
 				UserNickName: userNickName,
 				ServiceId:    order.ServiceId,
 				ServiceName:  serviceName,
-				Amount:       order.Amount,
+				Amount:       order.TotalAmount,
 				Status:       order.Status,
 				StatusText:   getOrderStatusText(order.Status),
 				CreatedAt:    order.CreatedAt,
@@ -379,7 +380,7 @@ func SetUserAsAdminHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 检查用户是否存在
-	user, err := dao.UserImp.GetUserByUserId(req.UserId)
+	_, err := dao.UserImp.GetUserByUserId(req.UserId)
 	if err != nil {
 		LogError("用户不存在", err)
 		response := &AdminResponse{
@@ -392,7 +393,8 @@ func SetUserAsAdminHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 设置用户为管理员
-	err = dao.AdminImp.SetUserAsAdmin(req.UserId, req.AdminLevel, req.ParentAdminId)
+	adminImp := &dao.AdminImp{}
+	err = adminImp.SetUserAsAdmin(req.UserId, req.AdminLevel, req.ParentAdminId)
 	if err != nil {
 		LogError("设置用户为管理员失败", err)
 		response := &AdminResponse{
@@ -477,7 +479,8 @@ func RemoveAdminHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 取消管理员权限
-	err := dao.AdminImp.RemoveAdmin(req.UserId)
+	adminImp := &dao.AdminImp{}
+	err := adminImp.RemoveAdmin(req.UserId)
 	if err != nil {
 		LogError("取消管理员权限失败", err)
 		response := &AdminResponse{

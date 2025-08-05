@@ -255,6 +255,3 @@ func (a *AdminImp) GetAdminLoginLogs(adminUserId string, page, pageSize int) ([]
 
 	return logs, total, nil
 }
-
-// AdminImp 管理员数据访问实现实例
-var AdminImp AdminInterface = &AdminImp{}
