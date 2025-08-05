@@ -39,6 +39,14 @@ type BindPhoneRequest struct {
 	Code   string `json:"code"` // 验证码
 }
 
+// UpdateUserInfoRequest 更新用户信息请求
+type UpdateUserInfoRequest struct {
+	UserId    int32  `json:"userId"`
+	NickName  string `json:"nickName,omitempty"`
+	AvatarUrl string `json:"avatarUrl,omitempty"`
+	Gender    int    `json:"gender,omitempty"`
+}
+
 // AddressRequest 地址请求
 type AddressRequest struct {
 	Id        int32  `json:"id,omitempty"`
@@ -764,4 +772,85 @@ func handleDeletePatient(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
+}
+
+// UpdateUserInfoHandler 更新用户信息
+func UpdateUserInfoHandler(w http.ResponseWriter, r *http.Request) {
+	LogInfo("开始处理更新用户信息请求", map[string]interface{}{
+		"method": r.Method,
+		"path":   r.URL.Path,
+	})
+
+	if r.Method != http.MethodPost {
+		LogError("请求方法不支持", fmt.Errorf("期望POST方法，实际为%s", r.Method))
+		http.Error(w, "只支持POST请求", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var req UpdateUserInfoRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		LogError("请求参数解析失败", err)
+		http.Error(w, "请求参数解析失败", http.StatusBadRequest)
+		return
+	}
+
+	LogStep("解析更新用户信息请求参数", map[string]interface{}{
+		"userId":    req.UserId,
+		"nickName":  req.NickName,
+		"avatarUrl": req.AvatarUrl,
+		"gender":    req.Gender,
+	})
+
+	// 验证用户是否存在
+	user, err := dao.UserImp.GetUserById(req.UserId)
+	if err != nil {
+		LogError("查询用户失败", err)
+		response := &UserResponse{
+			Code:     -1,
+			ErrorMsg: "用户不存在: " + err.Error(),
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(response)
+		return
+	}
+
+	// 更新用户信息
+	if req.NickName != "" {
+		user.NickName = req.NickName
+	}
+	if req.AvatarUrl != "" {
+		user.AvatarUrl = req.AvatarUrl
+	}
+	if req.Gender > 0 {
+		user.Gender = req.Gender
+	}
+
+	if err := dao.UserImp.UpdateUser(user); err != nil {
+		LogError("更新用户信息失败", err)
+		response := &UserResponse{
+			Code:     -1,
+			ErrorMsg: "更新用户信息失败: " + err.Error(),
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(response)
+		return
+	}
+
+	LogStep("用户信息更新成功", map[string]interface{}{
+		"userId":    user.Id,
+		"nickName":  user.NickName,
+		"avatarUrl": user.AvatarUrl,
+		"gender":    user.Gender,
+	})
+
+	response := &UserResponse{
+		Code: 0,
+		Data: map[string]string{"message": "用户信息更新成功"},
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+
+	LogInfo("更新用户信息成功", map[string]interface{}{
+		"userId": user.Id,
+	})
 }
