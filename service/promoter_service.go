@@ -6,8 +6,10 @@ import (
 	"net/http"
 	"time"
 
+	"wxcloudrun-golang/db"
 	"wxcloudrun-golang/db/dao"
 	"wxcloudrun-golang/db/model"
+	"wxcloudrun-golang/utils"
 )
 
 // PromoterResponse 推广响应
@@ -19,16 +21,17 @@ type PromoterResponse struct {
 
 // PromoterInfo 推广员信息
 type PromoterInfo struct {
-	UserId      string  `json:"userId"`
-	NickName    string  `json:"nickName"`
-	AvatarUrl   string  `json:"avatarUrl"`
-	QrCodeUrl   string  `json:"qrCodeUrl"`
-	TotalIncome float64 `json:"totalIncome"`
-	TodayIncome float64 `json:"todayIncome"`
-	MonthIncome float64 `json:"monthIncome"`
-	TotalOrders int     `json:"totalOrders"`
-	TodayOrders int     `json:"todayOrders"`
-	MonthOrders int     `json:"monthOrders"`
+	UserId       string  `json:"userId"`
+	PromoterCode string  `json:"promoterCode"` // 六位推广码
+	NickName     string  `json:"nickName"`
+	AvatarUrl    string  `json:"avatarUrl"`
+	QrCodeUrl    string  `json:"qrCodeUrl"`
+	TotalIncome  float64 `json:"totalIncome"`
+	TodayIncome  float64 `json:"todayIncome"`
+	MonthIncome  float64 `json:"monthIncome"`
+	TotalOrders  int     `json:"totalOrders"`
+	TodayOrders  int     `json:"todayOrders"`
+	MonthOrders  int     `json:"monthOrders"`
 }
 
 // CommissionInfo 佣金信息
@@ -114,10 +117,11 @@ func GetPromoterInfoHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		// 如果不存在，创建一个新的推荐关系
 		referral = &model.ReferralModel{
-			UserId:     userIdStr,
-			ReferrerId: nil, // 设为nil，表示没有推荐人
-			QrCodeUrl:  generateQrCodeUrl(userIdStr),
-			Status:     1,
+			UserId:       userIdStr,
+			ReferrerId:   nil,                          // 设为nil，表示没有推荐人
+			PromoterCode: generateUniquePromoterCode(), // 生成唯一推广码
+			QrCodeUrl:    generateQrCodeUrl(userIdStr),
+			Status:       1,
 		}
 		if err := dao.ReferralImp.CreateReferral(referral); err != nil {
 			LogError("创建推荐关系失败", err)
@@ -128,6 +132,21 @@ func GetPromoterInfoHandler(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Content-Type", "application/json")
 			json.NewEncoder(w).Encode(response)
 			return
+		}
+	} else {
+		// 如果存在但没有推广码，生成一个
+		if referral.PromoterCode == "" {
+			referral.PromoterCode = generateUniquePromoterCode()
+			if err := dao.ReferralImp.UpdateReferral(referral); err != nil {
+				LogError("更新推广码失败", err)
+				response := &PromoterResponse{
+					Code:     -1,
+					ErrorMsg: "更新推广码失败: " + err.Error(),
+				}
+				w.Header().Set("Content-Type", "application/json")
+				json.NewEncoder(w).Encode(response)
+				return
+			}
 		}
 	}
 
@@ -146,23 +165,25 @@ func GetPromoterInfoHandler(w http.ResponseWriter, r *http.Request) {
 
 	// 构建推广员信息
 	promoterInfo := &PromoterInfo{
-		UserId:      user.UserId,
-		NickName:    user.NickName,
-		AvatarUrl:   user.AvatarUrl,
-		QrCodeUrl:   referral.QrCodeUrl,
-		TotalIncome: stats.TotalIncome,
-		TodayIncome: stats.TodayIncome,
-		MonthIncome: stats.MonthIncome,
-		TotalOrders: stats.TotalOrders,
-		TodayOrders: stats.TodayOrders,
-		MonthOrders: stats.MonthOrders,
+		UserId:       user.UserId,
+		PromoterCode: referral.PromoterCode, // 使用数据库中的推广码
+		NickName:     user.NickName,
+		AvatarUrl:    user.AvatarUrl,
+		QrCodeUrl:    referral.QrCodeUrl,
+		TotalIncome:  stats.TotalIncome,
+		TodayIncome:  stats.TodayIncome,
+		MonthIncome:  stats.MonthIncome,
+		TotalOrders:  stats.TotalOrders,
+		TodayOrders:  stats.TodayOrders,
+		MonthOrders:  stats.MonthOrders,
 	}
 
 	LogStep("推广员信息获取成功", map[string]interface{}{
-		"userId":      promoterInfo.UserId,
-		"nickName":    promoterInfo.NickName,
-		"totalIncome": promoterInfo.TotalIncome,
-		"totalOrders": promoterInfo.TotalOrders,
+		"userId":       promoterInfo.UserId,
+		"promoterCode": promoterInfo.PromoterCode,
+		"nickName":     promoterInfo.NickName,
+		"totalIncome":  promoterInfo.TotalIncome,
+		"totalOrders":  promoterInfo.TotalOrders,
 	})
 
 	response := &PromoterResponse{
@@ -437,4 +458,181 @@ func getCashoutStatusText(status int) string {
 	default:
 		return "未知"
 	}
+}
+
+// generateUniquePromoterCode 生成唯一的推广码
+func generateUniquePromoterCode() string {
+	// 检查推广码是否已存在的函数
+	checkExists := func(code string) bool {
+		var count int64
+		cli := db.Get()
+		cli.Table("Referrals").Where("promoterCode = ?", code).Count(&count)
+		return count > 0
+	}
+
+	return utils.GenerateUniquePromoterCode(checkExists)
+}
+
+// GetUserByPromoterCodeHandler 通过推广码查找用户接口
+func GetUserByPromoterCodeHandler(w http.ResponseWriter, r *http.Request) {
+	LogInfo("开始处理通过推广码查找用户请求", map[string]interface{}{
+		"method": r.Method,
+		"path":   r.URL.Path,
+	})
+
+	if r.Method != http.MethodGet {
+		LogError("请求方法不支持", fmt.Errorf("期望GET方法，实际为%s", r.Method))
+		http.Error(w, "只支持GET请求", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// 获取推广码参数
+	promoterCode := r.URL.Query().Get("promoterCode")
+	LogStep("解析请求参数", map[string]interface{}{
+		"promoterCode": promoterCode,
+	})
+
+	if promoterCode == "" {
+		LogError("缺少必要参数", fmt.Errorf("promoterCode参数为空"))
+		http.Error(w, "缺少promoterCode参数", http.StatusBadRequest)
+		return
+	}
+
+	// 验证推广码格式
+	if !utils.ValidatePromoterCode(promoterCode) {
+		LogError("推广码格式无效", fmt.Errorf("推广码格式错误: %s", promoterCode))
+		response := &PromoterResponse{
+			Code:     -1,
+			ErrorMsg: "推广码格式无效",
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(response)
+		return
+	}
+
+	// 通过推广码查找用户
+	referral, err := dao.ReferralImp.GetReferralByPromoterCode(promoterCode)
+	if err != nil {
+		LogError("通过推广码查找用户失败", err)
+		response := &PromoterResponse{
+			Code:     -1,
+			ErrorMsg: "推广码不存在或已失效",
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(response)
+		return
+	}
+
+	// 获取用户信息
+	user, err := dao.UserImp.GetUserByUserId(referral.UserId)
+	if err != nil {
+		LogError("获取用户信息失败", err)
+		response := &PromoterResponse{
+			Code:     -1,
+			ErrorMsg: "获取用户信息失败: " + err.Error(),
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(response)
+		return
+	}
+
+	// 构建返回数据
+	userInfo := map[string]interface{}{
+		"userId":       user.UserId,
+		"nickName":     user.NickName,
+		"avatarUrl":    user.AvatarUrl,
+		"promoterCode": referral.PromoterCode,
+	}
+
+	LogStep("通过推广码查找用户成功", map[string]interface{}{
+		"promoterCode": promoterCode,
+		"userId":       user.UserId,
+		"nickName":     user.NickName,
+	})
+
+	response := &PromoterResponse{
+		Code: 0,
+		Data: userInfo,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+}
+
+// GeneratePromoterCodesHandler 批量生成推广码接口
+func GeneratePromoterCodesHandler(w http.ResponseWriter, r *http.Request) {
+	LogInfo("开始处理批量生成推广码请求", map[string]interface{}{
+		"method": r.Method,
+		"path":   r.URL.Path,
+	})
+
+	if r.Method != http.MethodPost {
+		LogError("请求方法不支持", fmt.Errorf("期望POST方法，实际为%s", r.Method))
+		http.Error(w, "只支持POST请求", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// 获取所有没有推广码的用户
+	var referrals []*model.ReferralModel
+	cli := db.Get()
+	err := cli.Table("Referrals").Where("promoterCode IS NULL OR promoterCode = ''").Find(&referrals).Error
+	if err != nil {
+		LogError("查询用户失败", err)
+		response := &PromoterResponse{
+			Code:     -1,
+			ErrorMsg: "查询用户失败: " + err.Error(),
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(response)
+		return
+	}
+
+	// 为每个用户生成推广码
+	successCount := 0
+	failedCount := 0
+	var results []map[string]interface{}
+
+	for _, referral := range referrals {
+		// 生成唯一推广码
+		promoterCode := generateUniquePromoterCode()
+		
+		// 更新数据库
+		err := cli.Table("Referrals").Where("id = ?", referral.Id).Update("promoterCode", promoterCode).Error
+		if err != nil {
+			LogError("更新推广码失败", fmt.Errorf("用户ID: %s, 错误: %v", referral.UserId, err))
+			failedCount++
+			results = append(results, map[string]interface{}{
+				"userId":       referral.UserId,
+				"promoterCode": "",
+				"status":       "失败",
+				"error":        err.Error(),
+			})
+		} else {
+			successCount++
+			results = append(results, map[string]interface{}{
+				"userId":       referral.UserId,
+				"promoterCode": promoterCode,
+				"status":       "成功",
+			})
+		}
+	}
+
+	LogStep("批量生成推广码完成", map[string]interface{}{
+		"totalCount":   len(referrals),
+		"successCount": successCount,
+		"failedCount":  failedCount,
+	})
+
+	response := &PromoterResponse{
+		Code: 0,
+		Data: map[string]interface{}{
+			"totalCount":   len(referrals),
+			"successCount": successCount,
+			"failedCount":  failedCount,
+			"results":      results,
+		},
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
 }

@@ -8,6 +8,7 @@ import (
 type ReferralInterface interface {
 	CreateReferral(referral *model.ReferralModel) error
 	GetReferralByUserId(userId string) (*model.ReferralModel, error)
+	GetReferralByPromoterCode(promoterCode string) (*model.ReferralModel, error) // 通过推广码查找用户
 	GetReferralsByReferrerId(referrerId string, page, pageSize int) ([]*model.ReferralModel, int64, error)
 	UpdateReferral(referral *model.ReferralModel) error
 

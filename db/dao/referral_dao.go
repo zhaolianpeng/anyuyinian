@@ -28,6 +28,14 @@ func (imp *ReferralInterfaceImp) GetReferralByUserId(userId string) (*model.Refe
 	return referral, err
 }
 
+// GetReferralByPromoterCode 根据推广码获取推荐关系
+func (imp *ReferralInterfaceImp) GetReferralByPromoterCode(promoterCode string) (*model.ReferralModel, error) {
+	var referral = new(model.ReferralModel)
+	cli := db.Get()
+	err := cli.Table(referralTableName).Where("promoterCode = ? AND status = ?", promoterCode, 1).First(referral).Error
+	return referral, err
+}
+
 // GetReferralsByReferrerId 根据推荐人ID获取推荐列表（分页）
 func (imp *ReferralInterfaceImp) GetReferralsByReferrerId(referrerId string, page, pageSize int) ([]*model.ReferralModel, int64, error) {
 	var referrals []*model.ReferralModel

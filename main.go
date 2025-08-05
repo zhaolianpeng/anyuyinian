@@ -75,6 +75,8 @@ func main() {
 	http.HandleFunc("/api/promoter/info", service.NewLogMiddleware(service.GetPromoterInfoHandler))
 	http.HandleFunc("/api/promoter/commission_list", service.NewLogMiddleware(service.GetCommissionListHandler))
 	http.HandleFunc("/api/promoter/cashout_list", service.NewLogMiddleware(service.GetCashoutListHandler))
+	http.HandleFunc("/api/promoter/find_user", service.NewLogMiddleware(service.GetUserByPromoterCodeHandler))
+	http.HandleFunc("/api/promoter/generate_codes", service.NewLogMiddleware(service.GeneratePromoterCodesHandler))
 
 	// 客服相关接口
 	http.HandleFunc("/api/kefu/send_msg", service.NewLogMiddleware(service.SendMessageHandler))
