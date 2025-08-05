@@ -6,9 +6,9 @@ import "time"
 type ReferralModel struct {
 	Id         int32     `gorm:"column:id;primaryKey;autoIncrement" json:"id"`
 	UserId     string    `gorm:"column:userId;uniqueIndex;not null;type:varchar(24)" json:"userId"`
-	ReferrerId int32     `gorm:"column:referrerId;not null" json:"referrerId"` // 推荐人ID
-	QrCodeUrl  string    `gorm:"column:qrCodeUrl" json:"qrCodeUrl"`            // 专属二维码URL
-	Status     int       `gorm:"column:status;default:1" json:"status"`        // 1-正常，0-禁用
+	ReferrerId string    `gorm:"column:referrerId;not null;type:varchar(24)" json:"referrerId"` // 推荐人ID
+	QrCodeUrl  string    `gorm:"column:qrCodeUrl" json:"qrCodeUrl"`                             // 专属二维码URL
+	Status     int       `gorm:"column:status;default:1" json:"status"`                         // 1-正常，0-禁用
 	CreatedAt  time.Time `gorm:"column:createdAt" json:"createdAt"`
 	UpdatedAt  time.Time `gorm:"column:updatedAt" json:"updatedAt"`
 }

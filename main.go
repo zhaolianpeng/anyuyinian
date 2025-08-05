@@ -71,6 +71,11 @@ func main() {
 	http.HandleFunc("/api/referral/config", service.NewLogMiddleware(service.ReferralConfigHandler))
 	http.HandleFunc("/api/referral/apply_cashout", service.NewLogMiddleware(service.ApplyCashoutHandler))
 
+	// 推广中心相关接口
+	http.HandleFunc("/api/promoter/info", service.NewLogMiddleware(service.GetPromoterInfoHandler))
+	http.HandleFunc("/api/promoter/commission_list", service.NewLogMiddleware(service.GetCommissionListHandler))
+	http.HandleFunc("/api/promoter/cashout_list", service.NewLogMiddleware(service.GetCashoutListHandler))
+
 	// 客服相关接口
 	http.HandleFunc("/api/kefu/send_msg", service.NewLogMiddleware(service.SendMessageHandler))
 	http.HandleFunc("/api/kefu/faq", service.NewLogMiddleware(service.FaqHandler))
