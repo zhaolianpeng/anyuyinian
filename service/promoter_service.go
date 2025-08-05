@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"wxcloudrun-golang/db"
@@ -116,11 +117,12 @@ func GetPromoterInfoHandler(w http.ResponseWriter, r *http.Request) {
 	referral, err := dao.ReferralImp.GetReferralByUserId(userIdStr)
 	if err != nil {
 		// 如果不存在，创建一个新的推荐关系
+		promoterCode := generateUniquePromoterCode()
 		referral = &model.ReferralModel{
 			UserId:       userIdStr,
 			ReferrerId:   nil,                          // 设为nil，表示没有推荐人
-			PromoterCode: generateUniquePromoterCode(), // 生成唯一推广码
-			QrCodeUrl:    generateQrCodeUrl(userIdStr),
+			PromoterCode: promoterCode,                 // 生成唯一推广码
+			QrCodeUrl:    generatePromoterQrCodeUrl(promoterCode), // 使用推广码生成二维码
 			Status:       1,
 		}
 		if err := dao.ReferralImp.CreateReferral(referral); err != nil {
@@ -146,6 +148,15 @@ func GetPromoterInfoHandler(w http.ResponseWriter, r *http.Request) {
 				w.Header().Set("Content-Type", "application/json")
 				json.NewEncoder(w).Encode(response)
 				return
+			}
+		}
+		
+		// 如果有推广码但没有二维码URL，生成二维码
+		if referral.PromoterCode != "" && (referral.QrCodeUrl == "" || strings.Contains(referral.QrCodeUrl, "example.com")) {
+			referral.QrCodeUrl = generatePromoterQrCodeUrl(referral.PromoterCode)
+			if err := dao.ReferralImp.UpdateReferral(referral); err != nil {
+				LogError("更新二维码URL失败", err)
+				// 不返回错误，继续使用现有URL
 			}
 		}
 	}
@@ -485,6 +496,13 @@ func generateUniquePromoterCode() string {
 	}
 
 	return utils.GenerateUniquePromoterCode(checkExists)
+}
+
+// generatePromoterQrCodeUrl 生成推广二维码URL
+func generatePromoterQrCodeUrl(promoterCode string) string {
+	// 使用新的二维码生成服务
+	// 暂时返回一个占位符URL，实际使用时需要根据推广码生成
+	return fmt.Sprintf("https://via.placeholder.com/256x256/CCCCCC/666666?text=QR+Code+%s", promoterCode)
 }
 
 // GetUserByPromoterCodeHandler 通过推广码查找用户接口

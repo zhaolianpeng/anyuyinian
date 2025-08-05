@@ -289,5 +289,8 @@ func ApplyCashoutHandler(w http.ResponseWriter, r *http.Request) {
 
 // 生成二维码URL
 func generateQrCodeUrl(userId string) string {
-	return fmt.Sprintf("https://example.com/qrcode/user_%s.png", userId)
+	// 使用新的二维码生成服务
+	// 注意：这里需要先获取用户的推广码
+	// 暂时返回一个占位符URL，实际使用时需要根据推广码生成
+	return fmt.Sprintf("https://via.placeholder.com/256x256/CCCCCC/666666?text=QR+Code+%s", userId)
 }
