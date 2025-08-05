@@ -120,8 +120,8 @@ func GetPromoterInfoHandler(w http.ResponseWriter, r *http.Request) {
 		promoterCode := generateUniquePromoterCode()
 		referral = &model.ReferralModel{
 			UserId:       userIdStr,
-			ReferrerId:   nil,                          // 设为nil，表示没有推荐人
-			PromoterCode: promoterCode,                 // 生成唯一推广码
+			ReferrerId:   nil,                                     // 设为nil，表示没有推荐人
+			PromoterCode: promoterCode,                            // 生成唯一推广码
 			QrCodeUrl:    generatePromoterQrCodeUrl(promoterCode), // 使用推广码生成二维码
 			Status:       1,
 		}
@@ -150,7 +150,7 @@ func GetPromoterInfoHandler(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 		}
-		
+
 		// 如果有推广码但没有二维码URL，生成二维码
 		if referral.PromoterCode != "" && (referral.QrCodeUrl == "" || strings.Contains(referral.QrCodeUrl, "example.com")) {
 			referral.QrCodeUrl = generatePromoterQrCodeUrl(referral.PromoterCode)
