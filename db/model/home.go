@@ -28,17 +28,17 @@ type NavigationModel struct {
 
 // ServiceModel 服务项模型
 type ServiceModel struct {
-	Id          int32     `gorm:"column:id;primaryKey;autoIncrement" json:"id"`
-	ServiceId   int32     `gorm:"column:serviceId" json:"serviceId"` // 服务ID，用于前端跳转
-	Name        string    `gorm:"column:name;not null" json:"name"`
-	Description string    `gorm:"column:description" json:"description"`
-	Icon        string    `gorm:"column:icon;not null" json:"icon"`
-	ImageUrl    string    `gorm:"column:imageUrl" json:"imageUrl"`
-	LinkUrl     string    `gorm:"column:linkUrl" json:"linkUrl"`
-	Sort        int       `gorm:"column:sort;default:0" json:"sort"`
-	Status      int       `gorm:"column:status;default:1" json:"status"` // 1-启用，0-禁用
-	CreatedAt   time.Time `gorm:"column:createdAt" json:"createdAt"`
-	UpdatedAt   time.Time `gorm:"column:updatedAt" json:"updatedAt"`
+	Id            int32     `gorm:"column:id;primaryKey;autoIncrement" json:"id"`
+	ServiceItemId int32     `gorm:"column:serviceitemid" json:"serviceId"` // 服务项目ID，用于前端跳转
+	Name          string    `gorm:"column:name;not null" json:"name"`
+	Description   string    `gorm:"column:description" json:"description"`
+	Icon          string    `gorm:"column:icon;not null" json:"icon"`
+	ImageUrl      string    `gorm:"column:imageUrl" json:"imageUrl"`
+	LinkUrl       string    `gorm:"column:linkUrl" json:"linkUrl"`
+	Sort          int       `gorm:"column:sort;default:0" json:"sort"`
+	Status        int       `gorm:"column:status;default:1" json:"status"` // 1-启用，0-禁用
+	CreatedAt     time.Time `gorm:"column:createdAt" json:"createdAt"`
+	UpdatedAt     time.Time `gorm:"column:updatedAt" json:"updatedAt"`
 }
 
 // HospitalModel 医院模型

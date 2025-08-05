@@ -33,10 +33,51 @@ func (imp *HomeInterfaceImp) GetNavigations() ([]*model.NavigationModel, error) 
 func (imp *HomeInterfaceImp) GetServices() ([]*model.ServiceModel, error) {
 	var services []*model.ServiceModel
 	cli := db.Get()
+
+	// 添加调试日志
+	fmt.Println("=== 开始查询Services表 ===")
+
+	// 先查询原始数据
+	var rawServices []map[string]interface{}
 	err := cli.Table("Services").
+		Select("id, serviceitemid, name, description, icon, imageUrl, linkUrl, sort, status, createdAt, updatedAt").
+		Where("status = ?", 1).
+		Order("sort ASC, id DESC").
+		Find(&rawServices).Error
+
+	if err != nil {
+		fmt.Printf("查询失败: %v\n", err)
+		return nil, err
+	}
+
+	fmt.Printf("查询到 %d 条原始数据\n", len(rawServices))
+
+	// 打印原始数据
+	for i, raw := range rawServices {
+		fmt.Printf("原始数据 %d: %+v\n", i+1, raw)
+	}
+
+	// 然后查询到结构体
+	err = cli.Table("Services").
+		Select("id, serviceitemid, name, description, icon, imageUrl, linkUrl, sort, status, createdAt, updatedAt").
 		Where("status = ?", 1).
 		Order("sort ASC, id DESC").
 		Find(&services).Error
+
+	if err != nil {
+		fmt.Printf("查询到结构体失败: %v\n", err)
+		return nil, err
+	}
+
+	fmt.Printf("查询到 %d 个服务\n", len(services))
+
+	// 打印结构体数据
+	for i, service := range services {
+		fmt.Printf("服务 %d: ID=%d, ServiceItemId=%d, Name=%s\n", i+1, service.Id, service.ServiceItemId, service.Name)
+	}
+
+	fmt.Println("=== Services表查询完成 ===")
+
 	return services, err
 }
 

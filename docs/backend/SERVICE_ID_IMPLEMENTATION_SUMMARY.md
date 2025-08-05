@@ -9,17 +9,17 @@
 
 #### 1.1 创建数据库迁移文件
 - **文件**: `anyuyinian/db/migration/add_service_id_field.sql`
-- **功能**: 为Services表添加serviceId字段
+- **功能**: 为Services表添加serviceitemid字段
 
 ```sql
--- 为Services表添加serviceId字段
-ALTER TABLE Services ADD COLUMN serviceId INT COMMENT '服务ID，用于前端跳转' AFTER id;
+-- 为Services表添加serviceitemid字段
+ALTER TABLE Services ADD COLUMN serviceitemid INT COMMENT '服务项目ID，用于前端跳转' AFTER id;
 
--- 更新现有数据的serviceId字段，使其与id字段值相同
-UPDATE Services SET serviceId = id WHERE serviceId IS NULL;
+-- 更新现有数据的serviceitemid字段，使其与id字段值相同
+UPDATE Services SET serviceitemid = id WHERE serviceitemid IS NULL;
 
--- 为serviceId字段添加索引
-ALTER TABLE Services ADD INDEX idx_service_id (serviceId);
+-- 为serviceitemid字段添加索引
+ALTER TABLE Services ADD INDEX idx_serviceitemid (serviceitemid);
 ```
 
 #### 1.2 执行数据库迁移
@@ -32,20 +32,20 @@ mysql -hlocalhost -P3306 -uroot -p123456 anyuyinian < db/migration/add_service_i
 
 #### 2.1 更新ServiceModel
 - **文件**: `anyuyinian/db/model/home.go`
-- **修改**: 在ServiceModel结构体中添加ServiceId字段
+- **修改**: 在ServiceModel结构体中添加ServiceItemId字段
 
 ```go
 type ServiceModel struct {
-    Id          int32     `gorm:"column:id;primaryKey;autoIncrement" json:"id"`
-    ServiceId   int32     `gorm:"column:serviceId" json:"serviceId"` // 服务ID，用于前端跳转
-    Name        string    `gorm:"column:name;not null" json:"name"`
+    Id            int32     `gorm:"column:id;primaryKey;autoIncrement" json:"id"`
+    ServiceItemId int32     `gorm:"column:serviceitemid" json:"serviceId"` // 服务项目ID，用于前端跳转
+    Name          string    `gorm:"column:name;not null" json:"name"`
     // ... 其他字段
 }
 ```
 
 #### 2.2 修改数据转换函数
 - **文件**: `anyuyinian/service/home_init_service.go`
-- **修改**: convertServicesToInterface函数使用数据库中的serviceId字段
+- **修改**: convertServicesToInterface函数使用数据库中的serviceitemid字段
 
 ```go
 func convertServicesToInterface(services []*model.ServiceModel) []interface{} {
@@ -53,7 +53,7 @@ func convertServicesToInterface(services []*model.ServiceModel) []interface{} {
     for i, service := range services {
         result[i] = map[string]interface{}{
             "id":          service.Id,
-            "serviceId":   service.ServiceId, // 使用数据库中的serviceId字段
+            "serviceId":   service.ServiceItemId, // 使用数据库中的serviceitemid字段
             "name":        service.Name,
             // ... 其他字段
         }
@@ -102,16 +102,16 @@ onServiceTap(e) {
 -- 检查Services表结构
 DESCRIBE Services;
 
--- 查看serviceId字段数据
-SELECT id, serviceId, name FROM Services ORDER BY id;
+-- 查看serviceitemid字段数据
+SELECT id, serviceitemid, name FROM Services ORDER BY id;
 
--- 验证serviceId字段是否正确
+-- 验证serviceitemid字段是否正确
 SELECT 
     id, 
-    serviceId, 
+    serviceitemid, 
     name,
     CASE 
-        WHEN id = serviceId THEN '✅ 一致'
+        WHEN id = serviceitemid THEN '✅ 一致'
         ELSE '❌ 不一致'
     END as status
 FROM Services;

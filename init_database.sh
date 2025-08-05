@@ -30,8 +30,8 @@ mysql -h$DB_HOST -P$DB_PORT -u$DB_USER -p$DB_PASSWORD $DB_NAME < db/migration/ad
 mysql -h$DB_HOST -P$DB_PORT -u$DB_USER -p$DB_PASSWORD $DB_NAME < db/migration/add_patient_info_fields.sql
 mysql -h$DB_HOST -P$DB_PORT -u$DB_USER -p$DB_PASSWORD $DB_NAME < db/migration/add_pay_deadline_field.sql
 
-# 执行serviceId字段迁移
-echo "4. 添加serviceId字段..."
+# 执行serviceitemid字段迁移
+echo "4. 添加serviceitemid字段..."
 mysql -h$DB_HOST -P$DB_PORT -u$DB_USER -p$DB_PASSWORD $DB_NAME < db/migration/add_service_id_field.sql
 
 echo "=== 数据库初始化完成 ==="

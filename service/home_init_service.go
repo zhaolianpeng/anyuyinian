@@ -270,7 +270,7 @@ func convertServicesToInterface(services []*model.ServiceModel) []interface{} {
 	for i, service := range services {
 		result[i] = map[string]interface{}{
 			"id":          service.Id,
-			"serviceId":   service.ServiceId, // 使用数据库中的serviceId字段
+			"serviceId":   service.ServiceItemId, // 使用数据库中的serviceitemid字段
 			"name":        service.Name,
 			"description": service.Description,
 			"icon":        service.Icon,
