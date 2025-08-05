@@ -595,7 +595,7 @@ func GeneratePromoterCodesHandler(w http.ResponseWriter, r *http.Request) {
 	for _, referral := range referrals {
 		// 生成唯一推广码
 		promoterCode := generateUniquePromoterCode()
-		
+
 		// 更新数据库
 		err := cli.Table("Referrals").Where("id = ?", referral.Id).Update("promoterCode", promoterCode).Error
 		if err != nil {
