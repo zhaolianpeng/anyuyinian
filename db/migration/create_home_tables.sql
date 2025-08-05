@@ -78,7 +78,8 @@ INSERT INTO Navigations (name, icon, linkUrl, sort, status) VALUES
 ('健康档案', '/images/nav/health-record.png', '/pages/health-record', 3, 1),
 ('检查报告', '/images/nav/report.png', '/pages/report', 4, 1),
 ('药品配送', '/images/nav/medicine.png', '/pages/medicine', 5, 1),
-('健康资讯', '/images/nav/news.png', '/pages/news', 6, 1);
+('健康资讯', '/images/nav/news.png', '/pages/news', 6, 1),
+('附近医院', '/images/nav/hospital.png', '/pages/hospital/list', 7, 1);
 
 -- 插入服务项示例数据
 INSERT INTO Services (name, description, icon, imageUrl, linkUrl, sort, status) VALUES

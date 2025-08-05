@@ -2,6 +2,7 @@ package service
 
 import (
 	"encoding/json"
+	"fmt"
 	"math"
 	"net/http"
 	"strconv"
@@ -136,17 +137,33 @@ func HospitalDetailHandler(w http.ResponseWriter, r *http.Request) {
 
 	// 从URL路径中获取医院ID
 	pathParts := strings.Split(r.URL.Path, "/")
-	if len(pathParts) < 4 {
+	fmt.Printf("调试信息 - 完整路径: %s\n", r.URL.Path)
+	fmt.Printf("调试信息 - 路径分割: %v\n", pathParts)
+
+	// 查找医院ID的位置
+	var hospitalIdStr string
+	for i, part := range pathParts {
+		if part == "detail" && i+1 < len(pathParts) {
+			hospitalIdStr = pathParts[i+1]
+			break
+		}
+	}
+
+	if hospitalIdStr == "" {
 		http.Error(w, "缺少医院ID参数", http.StatusBadRequest)
 		return
 	}
 
-	hospitalIdStr := pathParts[3]
+	fmt.Printf("调试信息 - 医院ID字符串: %s\n", hospitalIdStr)
+
 	hospitalId, err := strconv.Atoi(hospitalIdStr)
 	if err != nil {
+		fmt.Printf("调试信息 - 医院ID解析失败: %v\n", err)
 		http.Error(w, "无效的医院ID", http.StatusBadRequest)
 		return
 	}
+
+	fmt.Printf("调试信息 - 解析后的医院ID: %d\n", hospitalId)
 
 	// 获取医院详情（简化处理，从医院列表中查找）
 	hospitals, err := dao.HomeImp.GetHospitals(100) // 获取所有医院
@@ -160,9 +177,12 @@ func HospitalDetailHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	fmt.Printf("调试信息 - 获取到 %d 个医院\n", len(hospitals))
+
 	// 查找指定医院
 	var hospital *model.HospitalModel
 	for _, h := range hospitals {
+		fmt.Printf("调试信息 - 检查医院ID: %d, 名称: %s\n", h.Id, h.Name)
 		if h.Id == int32(hospitalId) {
 			hospital = h
 			break
@@ -170,6 +190,7 @@ func HospitalDetailHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if hospital == nil {
+		fmt.Printf("调试信息 - 未找到ID为 %d 的医院\n", hospitalId)
 		response := &HospitalResponse{
 			Code:     -1,
 			ErrorMsg: "医院不存在",
@@ -178,6 +199,8 @@ func HospitalDetailHandler(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(response)
 		return
 	}
+
+	fmt.Printf("调试信息 - 找到医院: %s (ID: %d)\n", hospital.Name, hospital.Id)
 
 	// 获取用户当前位置（从查询参数）
 	userLongitudeStr := r.URL.Query().Get("userLongitude")
