@@ -571,6 +571,81 @@ func CheckAdminStatusHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
+// 管理员数据概览统计接口
+func AdminStatsHandler(w http.ResponseWriter, r *http.Request) {
+	LogInfo("开始处理管理员数据概览统计请求", map[string]interface{}{
+		"method": r.Method,
+		"path":   r.URL.Path,
+	})
+
+	if r.Method != http.MethodGet {
+		LogError("请求方法不支持", fmt.Errorf("期望GET方法，实际为%s", r.Method))
+		http.Error(w, "只支持GET请求", http.StatusMethodNotAllowed)
+		return
+	}
+
+	adminUserId := r.URL.Query().Get("adminUserId")
+	if adminUserId == "" {
+		response := &AdminResponse{
+			Code:     -1,
+			ErrorMsg: "缺少adminUserId参数",
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(response)
+		return
+	}
+
+	adminImp := &dao.AdminImp{}
+	admin, err := adminImp.GetAdminByUserId(adminUserId)
+	if err != nil || admin == nil || admin.IsAdmin == 0 {
+		response := &AdminResponse{
+			Code:     -1,
+			ErrorMsg: "无效的管理员账号",
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(response)
+		return
+	}
+
+	dbCli := db.Get()
+	var totalUsers int64
+	var totalOrders int64
+	var todayOrders int64
+	var totalAmount float64
+
+	today := time.Now().Format("2006-01-02")
+
+	if admin.AdminLevel == 2 { // 超级管理员
+		dbCli.Table("Users").Where("isAdmin=0").Count(&totalUsers)
+		dbCli.Table("Orders").Count(&totalOrders)
+		dbCli.Table("Orders").Where("DATE(createdAt)=?", today).Count(&todayOrders)
+		dbCli.Table("Orders").Select("IFNULL(SUM(totalAmount),0)").Scan(&totalAmount)
+	} else { // 一级管理员
+		// 只统计自己及下级推广用户
+		var userIds []string
+		userIds = append(userIds, admin.UserId)
+		// 查询通过自己推广码注册的用户
+		dbCli.Table("Users").Where("referrerId=?", admin.UserId).Pluck("userId", &userIds)
+		dbCli.Table("Users").Where("userId IN ? AND isAdmin=0", userIds).Count(&totalUsers)
+		dbCli.Table("Orders").Where("userId IN ?", userIds).Count(&totalOrders)
+		dbCli.Table("Orders").Where("userId IN ? AND DATE(createdAt)=?", userIds, today).Count(&todayOrders)
+		dbCli.Table("Orders").Where("userId IN ?", userIds).Select("IFNULL(SUM(totalAmount),0)").Scan(&totalAmount)
+	}
+
+	stats := map[string]interface{}{
+		"totalUsers":  totalUsers,
+		"totalOrders": totalOrders,
+		"todayOrders": todayOrders,
+		"totalAmount": totalAmount,
+	}
+	response := &AdminResponse{
+		Code: 0,
+		Data: stats,
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+}
+
 // 获取订单状态文本
 func getOrderStatusText(status int) string {
 	switch status {
