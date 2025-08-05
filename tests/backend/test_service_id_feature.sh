@@ -24,4 +24,14 @@ curl -X POST "http://localhost:8080/api/home/init" \
   }' | jq '.data.services | length'
 
 echo ""
+echo "3. 验证serviceId字段值..."
+curl -X POST "http://localhost:8080/api/home/init" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "longitude": 121.4737,
+    "latitude": 31.2304,
+    "limit": 10
+  }' | jq '.data.services[] | {id, serviceId, name}'
+
+echo ""
 echo "=== 测试完成 ===" 
