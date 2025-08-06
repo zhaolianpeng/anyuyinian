@@ -101,6 +101,16 @@ func (imp *OrderInterfaceImp) UpdateRefundStatus(id int32, refundStatus int, ref
 	return cli.Table(orderTableName).Where("id = ?", id).Updates(updates).Error
 }
 
+// UpdateOrderAmount 更新订单金额
+func (imp *OrderInterfaceImp) UpdateOrderAmount(id int32, newAmount float64) error {
+	cli := db.Get()
+	updates := map[string]interface{}{
+		"totalAmount": newAmount,
+		"updatedAt":   time.Now(),
+	}
+	return cli.Table(orderTableName).Where("id = ?", id).Updates(updates).Error
+}
+
 // GetExpiredOrders 获取已超时的待支付订单
 func (imp *OrderInterfaceImp) GetExpiredOrders() ([]*model.OrderModel, error) {
 	var orders []*model.OrderModel

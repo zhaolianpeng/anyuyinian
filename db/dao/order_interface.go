@@ -15,6 +15,7 @@ type OrderInterface interface {
 	UpdateOrderStatus(id int32, status int) error
 	UpdatePayStatus(id int32, payStatus int, payTime *time.Time, transactionId string) error
 	UpdateRefundStatus(id int32, refundStatus int, refundAmount float64, refundReason string) error
+	UpdateOrderAmount(id int32, newAmount float64) error
 	GetExpiredOrders() ([]*model.OrderModel, error)
 	BatchCancelExpiredOrders() (int64, error)
 	GetOrdersByStatus(status int, page, pageSize int) ([]*model.OrderModel, int64, error)

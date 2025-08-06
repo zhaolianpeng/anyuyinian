@@ -62,6 +62,13 @@ type AdminOrderInfo struct {
 	CreatedAt    time.Time `json:"createdAt"`
 }
 
+// UpdateOrderAmountRequest 修改订单金额请求
+type UpdateOrderAmountRequest struct {
+	OrderId   int32   `json:"orderId"`
+	NewAmount float64 `json:"newAmount"`
+	Reason    string  `json:"reason"`
+}
+
 // AdminLoginHandler 管理员登录接口
 func AdminLoginHandler(w http.ResponseWriter, r *http.Request) {
 	LogInfo("开始处理管理员登录请求", map[string]interface{}{
@@ -916,4 +923,154 @@ func getOrderStatusText(status int) string {
 	default:
 		return "未知"
 	}
+}
+
+// UpdateOrderAmountHandler 修改订单金额接口
+func UpdateOrderAmountHandler(w http.ResponseWriter, r *http.Request) {
+	LogInfo("开始处理修改订单金额请求", map[string]interface{}{
+		"method": r.Method,
+		"path":   r.URL.Path,
+	})
+
+	if r.Method != http.MethodPost {
+		LogError("请求方法不支持", fmt.Errorf("期望POST方法，实际为%s", r.Method))
+		http.Error(w, "只支持POST请求", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// 获取管理员用户ID
+	adminUserId := r.URL.Query().Get("adminUserId")
+	if adminUserId == "" {
+		LogError("缺少必要参数", fmt.Errorf("adminUserId参数为空"))
+		http.Error(w, "缺少adminUserId参数", http.StatusBadRequest)
+		return
+	}
+
+	// 解析请求体
+	var req UpdateOrderAmountRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		LogError("请求参数解析失败", err)
+		http.Error(w, "请求参数解析失败", http.StatusBadRequest)
+		return
+	}
+
+	LogStep("解析修改订单金额请求参数", map[string]interface{}{
+		"orderId":   req.OrderId,
+		"newAmount": req.NewAmount,
+		"reason":    req.Reason,
+	})
+
+	// 验证参数
+	if req.OrderId <= 0 {
+		LogError("订单ID无效", fmt.Errorf("orderId=%d", req.OrderId))
+		http.Error(w, "订单ID无效", http.StatusBadRequest)
+		return
+	}
+
+	if req.NewAmount <= 0 {
+		LogError("新金额无效", fmt.Errorf("newAmount=%f", req.NewAmount))
+		http.Error(w, "新金额必须大于0", http.StatusBadRequest)
+		return
+	}
+
+	// 检查管理员权限
+	adminImp := &dao.AdminImp{}
+	admin, err := adminImp.GetAdminByUserId(adminUserId)
+	if err != nil || admin == nil || admin.IsAdmin == 0 {
+		LogError("管理员权限验证失败", err)
+		response := &AdminResponse{
+			Code:     -1,
+			ErrorMsg: "无效的管理员账号",
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(response)
+		return
+	}
+
+	// 只有超级管理员可以修改订单金额
+	if admin.AdminLevel != 2 {
+		LogError("权限不足", fmt.Errorf("adminLevel=%d, 需要adminLevel=2", admin.AdminLevel))
+		response := &AdminResponse{
+			Code:     -1,
+			ErrorMsg: "只有超级管理员可以修改订单金额",
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(response)
+		return
+	}
+
+	// 获取订单信息
+	order, err := dao.OrderImp.GetOrderById(req.OrderId)
+	if err != nil {
+		LogError("获取订单信息失败", err)
+		response := &AdminResponse{
+			Code:     -1,
+			ErrorMsg: "获取订单信息失败: " + err.Error(),
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(response)
+		return
+	}
+
+	if order == nil {
+		LogError("订单不存在", fmt.Errorf("orderId=%d", req.OrderId))
+		response := &AdminResponse{
+			Code:     -1,
+			ErrorMsg: "订单不存在",
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(response)
+		return
+	}
+
+	// 检查订单状态，只有未支付的订单可以修改金额
+	if order.Status != 0 || order.PayStatus != 0 {
+		LogError("订单状态不允许修改金额", fmt.Errorf("status=%d, payStatus=%d", order.Status, order.PayStatus))
+		response := &AdminResponse{
+			Code:     -1,
+			ErrorMsg: "只有未支付的订单可以修改金额",
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(response)
+		return
+	}
+
+	// 记录修改前的金额
+	oldAmount := order.TotalAmount
+
+	// 更新订单金额
+	err = dao.OrderImp.UpdateOrderAmount(req.OrderId, req.NewAmount)
+	if err != nil {
+		LogError("更新订单金额失败", err)
+		response := &AdminResponse{
+			Code:     -1,
+			ErrorMsg: "更新订单金额失败: " + err.Error(),
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(response)
+		return
+	}
+
+	LogStep("订单金额修改成功", map[string]interface{}{
+		"orderId":   req.OrderId,
+		"oldAmount": oldAmount,
+		"newAmount": req.NewAmount,
+		"adminId":   adminUserId,
+		"reason":    req.Reason,
+	})
+
+	response := &AdminResponse{
+		Code: 0,
+		Data: map[string]interface{}{
+			"orderId":   req.OrderId,
+			"orderNo":   order.OrderNo,
+			"oldAmount": oldAmount,
+			"newAmount": req.NewAmount,
+			"reason":    req.Reason,
+			"adminId":   adminUserId,
+		},
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
 }
