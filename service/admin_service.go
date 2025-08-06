@@ -616,6 +616,7 @@ func AdminStatsHandler(w http.ResponseWriter, r *http.Request) {
 	var paidAmount float64
 	var unpaidAmount float64
 	var refundAmount float64
+	var timeoutUnpaidAmount float64
 
 	// 根据管理员级别获取不同的数据
 	if admin.AdminLevel == 2 { // 超级管理员
@@ -629,6 +630,8 @@ func AdminStatsHandler(w http.ResponseWriter, r *http.Request) {
 		dbCli.Model(&model.OrderModel{}).Where("status = 0 AND payStatus = 0").Select("IFNULL(SUM(totalAmount),0)").Row().Scan(&unpaidAmount)
 		// 退款总金额（status = 4 或 refundStatus = 2）
 		dbCli.Model(&model.OrderModel{}).Where("status = 4 OR refundStatus = 2").Select("IFNULL(SUM(totalAmount),0)").Row().Scan(&refundAmount)
+		// 超时未支付总金额（status = 0 且 payStatus = 0 且 payDeadline < NOW()）
+		dbCli.Model(&model.OrderModel{}).Where("status = 0 AND payStatus = 0 AND payDeadline IS NOT NULL AND payDeadline < NOW()").Select("IFNULL(SUM(totalAmount),0)").Row().Scan(&timeoutUnpaidAmount)
 	} else { // 一级管理员
 		// 获取该管理员推广的用户ID列表
 		var promotedUserIds []string
@@ -645,16 +648,19 @@ func AdminStatsHandler(w http.ResponseWriter, r *http.Request) {
 		dbCli.Model(&model.OrderModel{}).Where("userId IN (?) AND status = 0 AND payStatus = 0", promotedUserIds).Select("IFNULL(SUM(totalAmount),0)").Row().Scan(&unpaidAmount)
 		// 退款总金额（status = 4 或 refundStatus = 2）
 		dbCli.Model(&model.OrderModel{}).Where("userId IN (?) AND (status = 4 OR refundStatus = 2)", promotedUserIds).Select("IFNULL(SUM(totalAmount),0)").Row().Scan(&refundAmount)
+		// 超时未支付总金额（status = 0 且 payStatus = 0 且 payDeadline < NOW()）
+		dbCli.Model(&model.OrderModel{}).Where("userId IN (?) AND status = 0 AND payStatus = 0 AND payDeadline IS NOT NULL AND payDeadline < NOW()", promotedUserIds).Select("IFNULL(SUM(totalAmount),0)").Row().Scan(&timeoutUnpaidAmount)
 	}
 
 	stats := map[string]interface{}{
-		"totalUsers":   totalUsers,
-		"totalOrders":  totalOrders,
-		"todayOrders":  todayOrders,
-		"totalAmount":  totalAmount,
-		"paidAmount":   paidAmount,
-		"unpaidAmount": unpaidAmount,
-		"refundAmount": refundAmount,
+		"totalUsers":          totalUsers,
+		"totalOrders":         totalOrders,
+		"todayOrders":         todayOrders,
+		"totalAmount":         totalAmount,
+		"paidAmount":          paidAmount,
+		"unpaidAmount":        unpaidAmount,
+		"refundAmount":        refundAmount,
+		"timeoutUnpaidAmount": timeoutUnpaidAmount,
 	}
 	response := &AdminResponse{
 		Code: 0,
