@@ -109,7 +109,7 @@ func main() {
 	http.HandleFunc("/api/admin/check-status", service.NewLogMiddleware(service.CheckAdminStatusHandler))
 	http.HandleFunc("/api/admin/users", service.NewLogMiddleware(service.GetAdminUsersHandler))
 	http.HandleFunc("/api/admin/orders", service.NewLogMiddleware(service.GetAdminOrdersHandler))
-	http.HandleFunc("/api/admin/set-admin", service.NewLogMiddleware(service.SetUserAsAdminHandler))
+	http.HandleFunc("/api/admin/set-admin", service.NewLogMiddleware(service.SetAdminHandler))
 	http.HandleFunc("/api/admin/remove-admin", service.NewLogMiddleware(service.RemoveAdminHandler))
 	http.HandleFunc("/api/admin/stats", service.NewLogMiddleware(service.AdminStatsHandler))
 	http.HandleFunc("/api/admin/admins", service.NewLogMiddleware(service.AdminAdminsHandler))

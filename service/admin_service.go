@@ -750,6 +750,127 @@ func AdminAdminsHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
+// 设置管理员接口
+func SetAdminHandler(w http.ResponseWriter, r *http.Request) {
+	LogInfo("开始处理设置管理员请求", map[string]interface{}{
+		"method": r.Method,
+		"path":   r.URL.Path,
+	})
+
+	if r.Method != http.MethodPost {
+		LogError("请求方法不支持", fmt.Errorf("期望POST方法，实际为%s", r.Method))
+		http.Error(w, "只支持POST请求", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// 解析请求体
+	var req struct {
+		UserId        string `json:"userId"`
+		AdminLevel    int    `json:"adminLevel"`
+		ParentAdminId string `json:"parentAdminId"`
+		AdminUsername string `json:"adminUsername"`
+		AdminPassword string `json:"adminPassword"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		LogError("解析请求体失败", err)
+		response := &AdminResponse{
+			Code:     -1,
+			ErrorMsg: "请求体格式错误",
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(response)
+		return
+	}
+
+	// 验证参数
+	if req.UserId == "" || req.AdminUsername == "" || req.AdminPassword == "" {
+		response := &AdminResponse{
+			Code:     -1,
+			ErrorMsg: "缺少必要参数",
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(response)
+		return
+	}
+
+	adminImp := &dao.AdminImp{}
+
+	// 检查要设置的用户是否存在
+	dbCli := db.Get()
+	var user model.UserModel
+	if err := dbCli.Where("userId = ?", req.UserId).First(&user).Error; err != nil {
+		LogError("用户不存在", err)
+		response := &AdminResponse{
+			Code:     -1,
+			ErrorMsg: "用户不存在",
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(response)
+		return
+	}
+
+	// 检查用户是否已经是管理员
+	if user.IsAdmin == 1 {
+		response := &AdminResponse{
+			Code:     -1,
+			ErrorMsg: "用户已经是管理员",
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(response)
+		return
+	}
+
+	// 设置用户为管理员
+	err := adminImp.SetUserAsAdmin(req.UserId, req.AdminLevel, req.ParentAdminId)
+	if err != nil {
+		LogError("设置管理员失败", err)
+		response := &AdminResponse{
+			Code:     -1,
+			ErrorMsg: "设置管理员失败",
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(response)
+		return
+	}
+
+	// 更新用户的用户名和密码
+	updateData := map[string]interface{}{
+		"adminUsername":  req.AdminUsername,
+		"adminPassword":  req.AdminPassword,
+		"adminCreatedAt": time.Now(),
+	}
+
+	if err := dbCli.Model(&user).Updates(updateData).Error; err != nil {
+		LogError("更新管理员信息失败", err)
+		response := &AdminResponse{
+			Code:     -1,
+			ErrorMsg: "更新管理员信息失败",
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(response)
+		return
+	}
+
+	LogStep("设置管理员成功", map[string]interface{}{
+		"userId":        req.UserId,
+		"adminLevel":    req.AdminLevel,
+		"adminUsername": req.AdminUsername,
+	})
+
+	response := &AdminResponse{
+		Code: 0,
+		Data: map[string]interface{}{
+			"userId":        req.UserId,
+			"adminLevel":    req.AdminLevel,
+			"adminUsername": req.AdminUsername,
+		},
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+}
+
 // 获取订单状态文本
 func getOrderStatusText(status int) string {
 	switch status {
