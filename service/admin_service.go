@@ -613,31 +613,48 @@ func AdminStatsHandler(w http.ResponseWriter, r *http.Request) {
 	var totalOrders int64
 	var todayOrders int64
 	var totalAmount float64
+	var paidAmount float64
+	var unpaidAmount float64
+	var refundAmount float64
 
-	today := time.Now().Format("2006-01-02")
-
+	// 根据管理员级别获取不同的数据
 	if admin.AdminLevel == 2 { // 超级管理员
-		dbCli.Table("Users").Where("isAdmin=0").Count(&totalUsers)
-		dbCli.Table("Orders").Count(&totalOrders)
-		dbCli.Table("Orders").Where("DATE(createdAt)=?", today).Count(&todayOrders)
-		dbCli.Table("Orders").Select("IFNULL(SUM(totalAmount),0)").Scan(&totalAmount)
+		dbCli.Model(&model.UserModel{}).Count(&totalUsers)
+		dbCli.Model(&model.OrderModel{}).Count(&totalOrders)
+		dbCli.Model(&model.OrderModel{}).Where("DATE(createdAt) = CURDATE()").Count(&todayOrders)
+		dbCli.Model(&model.OrderModel{}).Select("IFNULL(SUM(totalAmount),0)").Row().Scan(&totalAmount)
+		// 已支付总金额
+		dbCli.Model(&model.OrderModel{}).Where("status = 'paid'").Select("IFNULL(SUM(totalAmount),0)").Row().Scan(&paidAmount)
+		// 待支付总金额
+		dbCli.Model(&model.OrderModel{}).Where("status = 'pending'").Select("IFNULL(SUM(totalAmount),0)").Row().Scan(&unpaidAmount)
+		// 退款总金额
+		dbCli.Model(&model.OrderModel{}).Where("status = 'refunded'").Select("IFNULL(SUM(totalAmount),0)").Row().Scan(&refundAmount)
 	} else { // 一级管理员
-		// 只统计自己及下级推广用户
-		var userIds []string
-		userIds = append(userIds, admin.UserId)
-		// 查询通过自己推广码注册的用户
-		dbCli.Table("Users").Where("referrerId=?", admin.UserId).Pluck("userId", &userIds)
-		dbCli.Table("Users").Where("userId IN ? AND isAdmin=0", userIds).Count(&totalUsers)
-		dbCli.Table("Orders").Where("userId IN ?", userIds).Count(&totalOrders)
-		dbCli.Table("Orders").Where("userId IN ? AND DATE(createdAt)=?", userIds, today).Count(&todayOrders)
-		dbCli.Table("Orders").Where("userId IN ?", userIds).Select("IFNULL(SUM(totalAmount),0)").Scan(&totalAmount)
+		// 获取该管理员推广的用户ID列表
+		var promotedUserIds []string
+		dbCli.Model(&model.UserModel{}).Where("referrerId = ?", adminUserId).Pluck("userId", &promotedUserIds)
+		promotedUserIds = append(promotedUserIds, adminUserId) // 包含管理员自己的用户ID
+
+		dbCli.Model(&model.UserModel{}).Where("userId IN (?)", promotedUserIds).Count(&totalUsers)
+		dbCli.Model(&model.OrderModel{}).Where("userId IN (?)", promotedUserIds).Count(&totalOrders)
+		dbCli.Model(&model.OrderModel{}).Where("userId IN (?) AND DATE(createdAt) = CURDATE()", promotedUserIds).Count(&todayOrders)
+		dbCli.Model(&model.OrderModel{}).Where("userId IN (?)", promotedUserIds).Select("IFNULL(SUM(totalAmount),0)").Row().Scan(&totalAmount)
+		// 已支付总金额
+		dbCli.Model(&model.OrderModel{}).Where("userId IN (?) AND status = 'paid'", promotedUserIds).Select("IFNULL(SUM(totalAmount),0)").Row().Scan(&paidAmount)
+		// 待支付总金额
+		dbCli.Model(&model.OrderModel{}).Where("userId IN (?) AND status = 'pending'", promotedUserIds).Select("IFNULL(SUM(totalAmount),0)").Row().Scan(&unpaidAmount)
+		// 退款总金额
+		dbCli.Model(&model.OrderModel{}).Where("userId IN (?) AND status = 'refunded'", promotedUserIds).Select("IFNULL(SUM(totalAmount),0)").Row().Scan(&refundAmount)
 	}
 
 	stats := map[string]interface{}{
-		"totalUsers":  totalUsers,
-		"totalOrders": totalOrders,
-		"todayOrders": todayOrders,
-		"totalAmount": totalAmount,
+		"totalUsers":   totalUsers,
+		"totalOrders":  totalOrders,
+		"todayOrders":  todayOrders,
+		"totalAmount":  totalAmount,
+		"paidAmount":   paidAmount,
+		"unpaidAmount": unpaidAmount,
+		"refundAmount": refundAmount,
 	}
 	response := &AdminResponse{
 		Code: 0,
@@ -719,6 +736,13 @@ func AdminAdminsHandler(w http.ResponseWriter, r *http.Request) {
 	// 转换为前端需要的格式
 	var adminList []map[string]interface{}
 	for _, admin := range admins {
+		// 统计该管理员推荐码下单的总金额
+		var totalAmount float64
+		if admin.AdminLevel > 0 { // 只统计管理员
+			dbCli := db.Get()
+			dbCli.Table("Orders").Where("referrerId = ?", admin.UserId).Select("IFNULL(SUM(totalAmount),0)").Scan(&totalAmount)
+		}
+
 		adminInfo := map[string]interface{}{
 			"userId":         admin.UserId,
 			"nickName":       admin.NickName,
@@ -730,6 +754,7 @@ func AdminAdminsHandler(w http.ResponseWriter, r *http.Request) {
 			"parentAdminId":  admin.ParentAdminId,
 			"adminCreatedAt": admin.AdminCreatedAt,
 			"createdAt":      admin.CreatedAt,
+			"totalAmount":    totalAmount, // 添加推荐码下单总金额
 		}
 		adminList = append(adminList, adminInfo)
 	}
