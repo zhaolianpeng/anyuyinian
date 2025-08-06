@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 	"time"
 
 	"wxcloudrun-golang/db"
@@ -642,6 +643,109 @@ func AdminStatsHandler(w http.ResponseWriter, r *http.Request) {
 		Code: 0,
 		Data: stats,
 	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+}
+
+// 管理员列表接口
+func AdminAdminsHandler(w http.ResponseWriter, r *http.Request) {
+	LogInfo("开始处理获取管理员列表请求", map[string]interface{}{
+		"method": r.Method,
+		"path":   r.URL.Path,
+	})
+
+	if r.Method != http.MethodGet {
+		LogError("请求方法不支持", fmt.Errorf("期望GET方法，实际为%s", r.Method))
+		http.Error(w, "只支持GET请求", http.StatusMethodNotAllowed)
+		return
+	}
+
+	adminUserId := r.URL.Query().Get("adminUserId")
+	if adminUserId == "" {
+		response := &AdminResponse{
+			Code:     -1,
+			ErrorMsg: "缺少adminUserId参数",
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(response)
+		return
+	}
+
+	adminImp := &dao.AdminImp{}
+	admin, err := adminImp.GetAdminByUserId(adminUserId)
+	if err != nil || admin == nil || admin.IsAdmin == 0 {
+		response := &AdminResponse{
+			Code:     -1,
+			ErrorMsg: "无效的管理员账号",
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(response)
+		return
+	}
+
+	// 获取分页参数
+	page, _ := strconv.Atoi(r.URL.Query().Get("page"))
+	pageSize, _ := strconv.Atoi(r.URL.Query().Get("pageSize"))
+	if page <= 0 {
+		page = 1
+	}
+	if pageSize <= 0 {
+		pageSize = 20
+	}
+
+	// 根据管理员级别获取不同的数据
+	var admins []*model.UserModel
+	var total int64
+
+	if admin.AdminLevel == 2 { // 超级管理员
+		// 获取所有管理员
+		admins, total, err = adminImp.GetAllAdmins(page, pageSize)
+	} else { // 一级管理员
+		// 只获取自己的下级管理员
+		admins, total, err = adminImp.GetSubAdmins(adminUserId, page, pageSize)
+	}
+
+	if err != nil {
+		LogError("获取管理员列表失败", err)
+		response := &AdminResponse{
+			Code:     -1,
+			ErrorMsg: "获取管理员列表失败",
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(response)
+		return
+	}
+
+	// 转换为前端需要的格式
+	var adminList []map[string]interface{}
+	for _, admin := range admins {
+		adminInfo := map[string]interface{}{
+			"userId":         admin.UserId,
+			"nickName":       admin.NickName,
+			"avatarUrl":      admin.AvatarUrl,
+			"phone":          admin.Phone,
+			"isAdmin":        admin.IsAdmin,
+			"adminLevel":     admin.AdminLevel,
+			"adminUsername":  admin.AdminUsername,
+			"parentAdminId":  admin.ParentAdminId,
+			"adminCreatedAt": admin.AdminCreatedAt,
+			"createdAt":      admin.CreatedAt,
+		}
+		adminList = append(adminList, adminInfo)
+	}
+
+	hasMore := (page * pageSize) < int(total)
+
+	response := &AdminResponse{
+		Code: 0,
+		Data: map[string]interface{}{
+			"list":    adminList,
+			"total":   total,
+			"page":    page,
+			"hasMore": hasMore,
+		},
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
 }

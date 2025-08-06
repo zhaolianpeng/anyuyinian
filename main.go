@@ -112,6 +112,7 @@ func main() {
 	http.HandleFunc("/api/admin/set-admin", service.NewLogMiddleware(service.SetUserAsAdminHandler))
 	http.HandleFunc("/api/admin/remove-admin", service.NewLogMiddleware(service.RemoveAdminHandler))
 	http.HandleFunc("/api/admin/stats", service.NewLogMiddleware(service.AdminStatsHandler))
+	http.HandleFunc("/api/admin/admins", service.NewLogMiddleware(service.AdminAdminsHandler))
 
 	log.Fatal(http.ListenAndServe(":80", nil))
 }
