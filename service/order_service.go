@@ -636,7 +636,13 @@ func CancelOrderHandler(w http.ResponseWriter, r *http.Request) {
 
 // RefundOrderHandler 退款订单接口
 func RefundOrderHandler(w http.ResponseWriter, r *http.Request) {
+	LogInfo("开始处理退款订单请求", map[string]interface{}{
+		"method": r.Method,
+		"path":   r.URL.Path,
+	})
+
 	if r.Method != http.MethodPost {
+		LogError("请求方法不支持", fmt.Errorf("期望POST方法，实际为%s", r.Method))
 		http.Error(w, "只支持POST请求", http.StatusMethodNotAllowed)
 		return
 	}
@@ -644,26 +650,48 @@ func RefundOrderHandler(w http.ResponseWriter, r *http.Request) {
 	// 从URL路径中获取订单ID
 	pathParts := strings.Split(r.URL.Path, "/")
 	if len(pathParts) < 5 {
+		LogError("缺少订单ID参数", fmt.Errorf("路径段数不足: %d", len(pathParts)))
 		http.Error(w, "缺少订单ID参数", http.StatusBadRequest)
 		return
 	}
 
-	orderIdStr := pathParts[4] // 修复：使用索引4而不是3
+	orderIdStr := pathParts[4]
 	orderId, err := strconv.Atoi(orderIdStr)
 	if err != nil {
+		LogError("无效的订单ID", fmt.Errorf("orderId=%s", orderIdStr))
 		http.Error(w, "无效的订单ID", http.StatusBadRequest)
 		return
 	}
 
 	var req RefundOrderRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		LogError("请求参数解析失败", err)
 		http.Error(w, "请求参数解析失败", http.StatusBadRequest)
+		return
+	}
+
+	LogStep("解析退款请求参数", map[string]interface{}{
+		"orderId":      orderId,
+		"refundAmount": req.RefundAmount,
+		"reason":       req.Reason,
+	})
+
+	// 验证退款金额
+	if req.RefundAmount <= 0 {
+		LogError("退款金额无效", fmt.Errorf("refundAmount=%f", req.RefundAmount))
+		response := &OrderResponse{
+			Code:     -1,
+			ErrorMsg: "退款金额必须大于0",
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(response)
 		return
 	}
 
 	// 获取订单信息
 	order, err := dao.OrderImp.GetOrderById(int32(orderId))
 	if err != nil {
+		LogError("获取订单信息失败", err)
 		response := &OrderResponse{
 			Code:     -1,
 			ErrorMsg: "获取订单信息失败: " + err.Error(),
@@ -673,11 +701,47 @@ func RefundOrderHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 检查订单状态
-	if order.Status != 1 {
+	if order == nil {
+		LogError("订单不存在", fmt.Errorf("orderId=%d", orderId))
 		response := &OrderResponse{
 			Code:     -1,
-			ErrorMsg: "订单状态不正确",
+			ErrorMsg: "订单不存在",
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(response)
+		return
+	}
+
+	// 检查订单状态
+	if order.Status != 1 || order.PayStatus != 1 {
+		LogError("订单状态不正确", fmt.Errorf("status=%d, payStatus=%d", order.Status, order.PayStatus))
+		response := &OrderResponse{
+			Code:     -1,
+			ErrorMsg: "只有已支付的订单可以申请退款",
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(response)
+		return
+	}
+
+	// 检查退款金额不能超过订单金额
+	if req.RefundAmount > order.TotalAmount {
+		LogError("退款金额超过订单金额", fmt.Errorf("refundAmount=%f, totalAmount=%f", req.RefundAmount, order.TotalAmount))
+		response := &OrderResponse{
+			Code:     -1,
+			ErrorMsg: "退款金额不能超过订单金额",
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(response)
+		return
+	}
+
+	// 检查是否已经申请过退款
+	if order.RefundStatus > 0 {
+		LogError("订单已申请退款", fmt.Errorf("refundStatus=%d", order.RefundStatus))
+		response := &OrderResponse{
+			Code:     -1,
+			ErrorMsg: "订单已申请退款，请勿重复申请",
 		}
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(response)
@@ -686,6 +750,7 @@ func RefundOrderHandler(w http.ResponseWriter, r *http.Request) {
 
 	// 更新退款状态
 	if err := dao.OrderImp.UpdateRefundStatus(int32(orderId), 1, req.RefundAmount, req.Reason); err != nil {
+		LogError("申请退款失败", err)
 		response := &OrderResponse{
 			Code:     -1,
 			ErrorMsg: "申请退款失败: " + err.Error(),
@@ -695,9 +760,22 @@ func RefundOrderHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	LogStep("退款申请成功", map[string]interface{}{
+		"orderId":      orderId,
+		"orderNo":      order.OrderNo,
+		"refundAmount": req.RefundAmount,
+		"reason":       req.Reason,
+	})
+
 	response := &OrderResponse{
 		Code: 0,
-		Data: map[string]string{"message": "退款申请提交成功"},
+		Data: map[string]interface{}{
+			"orderId":      orderId,
+			"orderNo":      order.OrderNo,
+			"refundAmount": req.RefundAmount,
+			"reason":       req.Reason,
+			"message":      "退款申请提交成功",
+		},
 	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)

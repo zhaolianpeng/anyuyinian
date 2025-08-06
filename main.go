@@ -117,6 +117,7 @@ func main() {
 	http.HandleFunc("/api/admin/stats", service.NewLogMiddleware(service.AdminStatsHandler))
 	http.HandleFunc("/api/admin/admins", service.NewLogMiddleware(service.AdminAdminsHandler))
 	http.HandleFunc("/api/admin/order/update-amount", service.NewLogMiddleware(service.UpdateOrderAmountHandler))
+	http.HandleFunc("/api/admin/order/refund", service.NewLogMiddleware(service.AdminRefundOrderHandler))
 
 	log.Fatal(http.ListenAndServe(":80", nil))
 }

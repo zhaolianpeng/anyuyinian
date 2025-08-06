@@ -15,7 +15,7 @@
 2. **微信支付服务** (`service/wechat_pay_service.go`)
 3. **订单支付处理** (`service/order_service.go`)
 4. **支付通知处理** (`service/wechat_pay_service.go`)
-
+请输入新金额：
 ### 前端组件
 1. **支付调用** (`miniprogram/pages/order/order.js`)
 2. **支付确认** (`miniprogram/pages/order/detail.js`)

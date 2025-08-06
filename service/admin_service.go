@@ -69,6 +69,14 @@ type UpdateOrderAmountRequest struct {
 	Reason    string  `json:"reason"`
 }
 
+// AdminRefundOrderRequest 管理员退款请求
+type AdminRefundOrderRequest struct {
+	OrderId      int32   `json:"orderId"`
+	RefundAmount float64 `json:"refundAmount"`
+	Reason       string  `json:"reason"`
+	RefundStatus int     `json:"refundStatus"` // 1-退款中，2-已退款
+}
+
 // AdminLoginHandler 管理员登录接口
 func AdminLoginHandler(w http.ResponseWriter, r *http.Request) {
 	LogInfo("开始处理管理员登录请求", map[string]interface{}{
@@ -1068,6 +1076,193 @@ func UpdateOrderAmountHandler(w http.ResponseWriter, r *http.Request) {
 			"newAmount": req.NewAmount,
 			"reason":    req.Reason,
 			"adminId":   adminUserId,
+		},
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+}
+
+// AdminRefundOrderHandler 管理员退款订单接口
+func AdminRefundOrderHandler(w http.ResponseWriter, r *http.Request) {
+	LogInfo("开始处理管理员退款订单请求", map[string]interface{}{
+		"method": r.Method,
+		"path":   r.URL.Path,
+	})
+
+	if r.Method != http.MethodPost {
+		LogError("请求方法不支持", fmt.Errorf("期望POST方法，实际为%s", r.Method))
+		http.Error(w, "只支持POST请求", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// 获取管理员用户ID
+	adminUserId := r.URL.Query().Get("adminUserId")
+	if adminUserId == "" {
+		LogError("缺少必要参数", fmt.Errorf("adminUserId参数为空"))
+		http.Error(w, "缺少adminUserId参数", http.StatusBadRequest)
+		return
+	}
+
+	// 解析请求体
+	var req AdminRefundOrderRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		LogError("请求参数解析失败", err)
+		http.Error(w, "请求参数解析失败", http.StatusBadRequest)
+		return
+	}
+
+	LogStep("解析管理员退款请求参数", map[string]interface{}{
+		"orderId":      req.OrderId,
+		"refundAmount": req.RefundAmount,
+		"reason":       req.Reason,
+		"refundStatus": req.RefundStatus,
+	})
+
+	// 验证参数
+	if req.OrderId <= 0 {
+		LogError("订单ID无效", fmt.Errorf("orderId=%d", req.OrderId))
+		http.Error(w, "订单ID无效", http.StatusBadRequest)
+		return
+	}
+
+	if req.RefundAmount <= 0 {
+		LogError("退款金额无效", fmt.Errorf("refundAmount=%f", req.RefundAmount))
+		http.Error(w, "退款金额必须大于0", http.StatusBadRequest)
+		return
+	}
+
+	if req.RefundStatus != 1 && req.RefundStatus != 2 {
+		LogError("退款状态无效", fmt.Errorf("refundStatus=%d", req.RefundStatus))
+		http.Error(w, "退款状态无效", http.StatusBadRequest)
+		return
+	}
+
+	// 检查管理员权限
+	adminImp := &dao.AdminImp{}
+	admin, err := adminImp.GetAdminByUserId(adminUserId)
+	if err != nil || admin == nil || admin.IsAdmin == 0 {
+		LogError("管理员权限验证失败", err)
+		response := &AdminResponse{
+			Code:     -1,
+			ErrorMsg: "无效的管理员账号",
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(response)
+		return
+	}
+
+	// 只有超级管理员可以处理退款
+	if admin.AdminLevel != 2 {
+		LogError("权限不足", fmt.Errorf("adminLevel=%d, 需要adminLevel=2", admin.AdminLevel))
+		response := &AdminResponse{
+			Code:     -1,
+			ErrorMsg: "只有超级管理员可以处理退款",
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(response)
+		return
+	}
+
+	// 获取订单信息
+	order, err := dao.OrderImp.GetOrderById(req.OrderId)
+	if err != nil {
+		LogError("获取订单信息失败", err)
+		response := &AdminResponse{
+			Code:     -1,
+			ErrorMsg: "获取订单信息失败: " + err.Error(),
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(response)
+		return
+	}
+
+	if order == nil {
+		LogError("订单不存在", fmt.Errorf("orderId=%d", req.OrderId))
+		response := &AdminResponse{
+			Code:     -1,
+			ErrorMsg: "订单不存在",
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(response)
+		return
+	}
+
+	// 检查订单状态
+	if order.Status != 1 || order.PayStatus != 1 {
+		LogError("订单状态不正确", fmt.Errorf("status=%d, payStatus=%d", order.Status, order.PayStatus))
+		response := &AdminResponse{
+			Code:     -1,
+			ErrorMsg: "只有已支付的订单可以退款",
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(response)
+		return
+	}
+
+	// 检查退款金额不能超过订单金额
+	if req.RefundAmount > order.TotalAmount {
+		LogError("退款金额超过订单金额", fmt.Errorf("refundAmount=%f, totalAmount=%f", req.RefundAmount, order.TotalAmount))
+		response := &AdminResponse{
+			Code:     -1,
+			ErrorMsg: "退款金额不能超过订单金额",
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(response)
+		return
+	}
+
+	// 更新退款状态
+	if err := dao.OrderImp.UpdateRefundStatus(req.OrderId, req.RefundStatus, req.RefundAmount, req.Reason); err != nil {
+		LogError("处理退款失败", err)
+		response := &AdminResponse{
+			Code:     -1,
+			ErrorMsg: "处理退款失败: " + err.Error(),
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(response)
+		return
+	}
+
+	// 如果设置为已退款，同时更新订单状态
+	if req.RefundStatus == 2 {
+		if err := dao.OrderImp.UpdateOrderStatus(req.OrderId, 4); err != nil {
+			LogError("更新订单状态失败", err)
+			response := &AdminResponse{
+				Code:     -1,
+				ErrorMsg: "更新订单状态失败: " + err.Error(),
+			}
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(response)
+			return
+		}
+	}
+
+	LogStep("管理员退款处理成功", map[string]interface{}{
+		"orderId":      req.OrderId,
+		"orderNo":      order.OrderNo,
+		"refundAmount": req.RefundAmount,
+		"reason":       req.Reason,
+		"refundStatus": req.RefundStatus,
+		"adminId":      adminUserId,
+	})
+
+	response := &AdminResponse{
+		Code: 0,
+		Data: map[string]interface{}{
+			"orderId":      req.OrderId,
+			"orderNo":      order.OrderNo,
+			"refundAmount": req.RefundAmount,
+			"reason":       req.Reason,
+			"refundStatus": req.RefundStatus,
+			"adminId":      adminUserId,
+			"message": func() string {
+				if req.RefundStatus == 2 {
+					return "退款处理成功"
+				} else {
+					return "退款状态更新成功"
+				}
+			}(),
 		},
 	}
 
