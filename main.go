@@ -61,6 +61,9 @@ func main() {
 	http.HandleFunc("/api/order/detail", service.NewLogMiddleware(service.OrderDetailHandler))
 	http.HandleFunc("/api/order/time_slots", service.NewLogMiddleware(service.GetAvailableTimeSlotsHandler))
 
+	// 支付相关接口
+	http.HandleFunc("/api/payment/notify", service.NewLogMiddleware(service.HandleWechatPayNotify))
+
 	// 订单超时相关接口
 	http.HandleFunc("/api/order/check_expired", service.NewLogMiddleware(service.CheckExpiredOrdersHandler))
 	http.HandleFunc("/api/order/expired_count", service.NewLogMiddleware(service.GetExpiredOrdersCountHandler))

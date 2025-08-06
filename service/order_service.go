@@ -40,6 +40,7 @@ type SubmitOrderRequest struct {
 type PayOrderRequest struct {
 	OrderId   int32  `json:"orderId"`
 	PayMethod string `json:"payMethod"` // wechat, alipay
+	OpenID    string `json:"openId"`    // 用户openID
 }
 
 // CancelOrderRequest 取消订单请求
@@ -380,7 +381,7 @@ func PayOrderHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 生成微信支付参数
-	paymentParams, err := generateWechatPayParams(order, req.PayMethod)
+	paymentParams, err := GenerateWechatPayParams(order, req.OpenID)
 	if err != nil {
 		response := &OrderResponse{
 			Code:     -1,
@@ -1086,15 +1087,12 @@ func generateTransactionId() string {
 
 // 生成微信支付参数
 func generateWechatPayParams(order *model.OrderModel, payMethod string) (map[string]interface{}, error) {
-	// 这里应该调用微信支付API生成支付参数
-	// 目前返回模拟数据
-	return map[string]interface{}{
-		"timeStamp": strconv.FormatInt(time.Now().Unix(), 10),
-		"nonceStr":  generateTransactionId(),
-		"package":   "prepay_id=wx" + generateTransactionId(),
-		"signType":  "MD5",
-		"paySign":   "mock_pay_sign_" + generateTransactionId(),
-	}, nil
+	// 从请求中获取openID，这里需要修改PayOrderHandler来传递openID
+	// 暂时使用模拟的openID
+	openID := "mock_openid_" + order.UserId
+
+	// 调用微信支付服务生成支付参数
+	return GenerateWechatPayParams(order, openID)
 }
 
 // GetAvailableTimeSlotsRequest 获取可用时间槽请求
