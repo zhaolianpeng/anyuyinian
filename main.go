@@ -1,11 +1,11 @@
 package main
 
 import (
-	"fmt"
-	"log"
-	"net/http"
-	"wxcloudrun-golang/db"
-	"wxcloudrun-golang/service"
+    "fmt"
+    "log"
+    "net/http"
+    "wxcloudrun-golang/db"
+    "wxcloudrun-golang/service"
 )
 
 func main() {
@@ -117,7 +117,11 @@ func main() {
 	http.HandleFunc("/api/admin/stats", service.NewLogMiddleware(service.AdminStatsHandler))
 	http.HandleFunc("/api/admin/admins", service.NewLogMiddleware(service.AdminAdminsHandler))
 	http.HandleFunc("/api/admin/order/update-amount", service.NewLogMiddleware(service.UpdateOrderAmountHandler))
-	http.HandleFunc("/api/admin/order/refund", service.NewLogMiddleware(service.AdminRefundOrderHandler))
+    http.HandleFunc("/api/admin/order/refund", service.NewLogMiddleware(service.AdminRefundOrderHandler))
+
+    // 管理员服务管理相关接口
+    http.HandleFunc("/api/admin/services", service.NewLogMiddleware(service.GetAdminServicesHandler))
+    http.HandleFunc("/api/admin/service/update-price", service.NewLogMiddleware(service.UpdateServicePriceHandler))
 
 	log.Fatal(http.ListenAndServe(":80", nil))
 }

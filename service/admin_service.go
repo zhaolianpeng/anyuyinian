@@ -1269,3 +1269,211 @@ func AdminRefundOrderHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
 }
+
+// =============================
+// 服务管理：列表与修改价格
+// =============================
+
+// AdminServiceInfo 管理员服务信息
+type AdminServiceInfo struct {
+    Id            int32     `json:"id"`
+    Name          string    `json:"name"`
+    Description   string    `json:"description"`
+    Category      string    `json:"category"`
+    Price         float64   `json:"price"`
+    OriginalPrice float64   `json:"originalPrice"`
+    ImageUrl      string    `json:"imageUrl"`
+    Status        int       `json:"status"`
+    StatusText    string    `json:"statusText"`
+    Sort          int       `json:"sort"`
+    CreatedAt     time.Time `json:"createdAt"`
+    UpdatedAt     time.Time `json:"updatedAt"`
+}
+
+// UpdateServicePriceRequest 修改服务价格请求
+type UpdateServicePriceRequest struct {
+    ServiceId        int32   `json:"serviceId"`
+    NewPrice         float64 `json:"newPrice"`
+    NewOriginalPrice float64 `json:"newOriginalPrice"`
+    Reason           string  `json:"reason"`
+}
+
+// GetAdminServicesHandler 获取管理员服务列表接口
+func GetAdminServicesHandler(w http.ResponseWriter, r *http.Request) {
+    LogInfo("开始处理获取管理员服务列表请求", map[string]interface{}{
+        "method": r.Method,
+        "path":   r.URL.Path,
+    })
+
+    if r.Method != http.MethodGet {
+        LogError("请求方法不支持", fmt.Errorf("期望GET方法，实际为%s", r.Method))
+        http.Error(w, "只支持GET请求", http.StatusMethodNotAllowed)
+        return
+    }
+
+    // 读取管理员身份（支持query或header）
+    adminUserId := r.URL.Query().Get("adminUserId")
+    if adminUserId == "" {
+        adminUserId = r.Header.Get("adminUserId")
+    }
+    if adminUserId == "" {
+        LogError("缺少必要参数", fmt.Errorf("adminUserId参数为空"))
+        http.Error(w, "缺少adminUserId参数", http.StatusBadRequest)
+        return
+    }
+
+    // 解析查询参数
+    page := 1
+    pageSize := 20
+    if v := r.URL.Query().Get("page"); v != "" {
+        if p, err := strconv.Atoi(v); err == nil && p > 0 { page = p }
+    }
+    if v := r.URL.Query().Get("pageSize"); v != "" {
+        if ps, err := strconv.Atoi(v); err == nil && ps > 0 && ps <= 100 { pageSize = ps }
+    }
+    category := r.URL.Query().Get("category")
+
+    // 获取服务列表
+    var (
+        services []*model.ServiceItemModel
+        total    int64
+        err      error
+    )
+    if category != "" {
+        services, total, err = dao.ServiceImp.GetServicesByCategory(category, page, pageSize)
+    } else {
+        services, total, err = dao.ServiceImp.GetAllServices(page, pageSize)
+    }
+    if err != nil {
+        LogError("获取服务列表失败", err)
+        response := &AdminResponse{Code: -1, ErrorMsg: "获取服务列表失败: " + err.Error()}
+        w.Header().Set("Content-Type", "application/json")
+        json.NewEncoder(w).Encode(response)
+        return
+    }
+
+    // 转换返回
+    list := make([]*AdminServiceInfo, 0, len(services))
+    for _, s := range services {
+        list = append(list, &AdminServiceInfo{
+            Id:            s.Id,
+            Name:          s.Name,
+            Description:   s.Description,
+            Category:      s.Category,
+            Price:         s.Price,
+            OriginalPrice: s.OriginalPrice,
+            ImageUrl:      s.ImageUrl,
+            Status:        s.Status,
+            StatusText:    getServiceStatusText(s.Status),
+            Sort:          s.Sort,
+            CreatedAt:     s.CreatedAt,
+            UpdatedAt:     s.UpdatedAt,
+        })
+    }
+
+    response := &AdminResponse{Code: 0, Data: map[string]interface{}{
+        "list":     list,
+        "total":    total,
+        "page":     page,
+        "pageSize": pageSize,
+        "hasMore":  int64(page*pageSize) < total,
+    }}
+    w.Header().Set("Content-Type", "application/json")
+    json.NewEncoder(w).Encode(response)
+}
+
+// UpdateServicePriceHandler 修改服务价格接口
+func UpdateServicePriceHandler(w http.ResponseWriter, r *http.Request) {
+    LogInfo("开始处理修改服务价格请求", map[string]interface{}{
+        "method": r.Method,
+        "path":   r.URL.Path,
+    })
+
+    if r.Method != http.MethodPost {
+        LogError("请求方法不支持", fmt.Errorf("期望POST方法，实际为%s", r.Method))
+        http.Error(w, "只支持POST请求", http.StatusMethodNotAllowed)
+        return
+    }
+
+    // 读取管理员身份（支持query或header）
+    adminUserId := r.URL.Query().Get("adminUserId")
+    if adminUserId == "" { adminUserId = r.Header.Get("adminUserId") }
+    if adminUserId == "" {
+        LogError("缺少必要参数", fmt.Errorf("adminUserId参数为空"))
+        http.Error(w, "缺少adminUserId参数", http.StatusBadRequest)
+        return
+    }
+
+    // 解析请求体
+    var req UpdateServicePriceRequest
+    if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+        LogError("解析请求体失败", err)
+        response := &AdminResponse{Code: -1, ErrorMsg: "请求体格式错误"}
+        w.Header().Set("Content-Type", "application/json")
+        json.NewEncoder(w).Encode(response)
+        return
+    }
+
+    if req.ServiceId <= 0 {
+        response := &AdminResponse{Code: -1, ErrorMsg: "服务ID无效"}
+        w.Header().Set("Content-Type", "application/json")
+        json.NewEncoder(w).Encode(response)
+        return
+    }
+    if req.NewPrice < 0 || req.NewOriginalPrice < 0 {
+        response := &AdminResponse{Code: -1, ErrorMsg: "价格不能为负数"}
+        w.Header().Set("Content-Type", "application/json")
+        json.NewEncoder(w).Encode(response)
+        return
+    }
+
+    // 获取服务并更新
+    s, err := dao.ServiceImp.GetServiceById(req.ServiceId)
+    if err != nil || s == nil {
+        if err == nil { err = fmt.Errorf("service not found") }
+        LogError("获取服务信息失败", err)
+        response := &AdminResponse{Code: -1, ErrorMsg: "获取服务信息失败: " + err.Error()}
+        w.Header().Set("Content-Type", "application/json")
+        json.NewEncoder(w).Encode(response)
+        return
+    }
+
+    oldPrice := s.Price
+    oldOriginalPrice := s.OriginalPrice
+    s.Price = req.NewPrice
+    s.OriginalPrice = req.NewOriginalPrice
+    s.UpdatedAt = time.Now()
+    if err := dao.ServiceImp.UpdateService(s); err != nil {
+        LogError("更新服务价格失败", err)
+        response := &AdminResponse{Code: -1, ErrorMsg: "更新服务价格失败: " + err.Error()}
+        w.Header().Set("Content-Type", "application/json")
+        json.NewEncoder(w).Encode(response)
+        return
+    }
+
+    response := &AdminResponse{Code: 0, Data: map[string]interface{}{
+        "serviceId":        s.Id,
+        "serviceName":      s.Name,
+        "oldPrice":         oldPrice,
+        "newPrice":         s.Price,
+        "oldOriginalPrice": oldOriginalPrice,
+        "newOriginalPrice": s.OriginalPrice,
+        "reason":           req.Reason,
+        "adminId":          adminUserId,
+        "message":          "服务价格更新成功",
+    }}
+    w.Header().Set("Content-Type", "application/json")
+    json.NewEncoder(w).Encode(response)
+}
+
+// getServiceStatusText 获取服务状态文本
+func getServiceStatusText(status int) string {
+    switch status {
+    case 1:
+        return "上架"
+    case 0:
+        return "下架"
+    default:
+        return "未知"
+    }
+}
