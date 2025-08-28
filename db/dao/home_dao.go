@@ -40,7 +40,7 @@ func (imp *HomeInterfaceImp) GetServices() ([]*model.ServiceModel, error) {
 	// 先查询原始数据
 	var rawServices []map[string]interface{}
 	err := cli.Table("Services").
-		Select("id, serviceitemid, name, description, icon, imageUrl, linkUrl, sort, status, createdAt, updatedAt").
+		Select("id, serviceitemid, name, description, icon, imageUrl, linkUrl, price, category, sort, status, createdAt, updatedAt").
 		Where("status = ?", 1).
 		Order("sort ASC, id DESC").
 		Find(&rawServices).Error
@@ -59,7 +59,7 @@ func (imp *HomeInterfaceImp) GetServices() ([]*model.ServiceModel, error) {
 
 	// 然后查询到结构体
 	err = cli.Table("Services").
-		Select("id, serviceitemid, name, description, icon, imageUrl, linkUrl, sort, status, createdAt, updatedAt").
+		Select("id, serviceitemid, name, description, icon, imageUrl, linkUrl, price, category, sort, status, createdAt, updatedAt").
 		Where("status = ?", 1).
 		Order("sort ASC, id DESC").
 		Find(&services).Error
@@ -77,6 +77,20 @@ func (imp *HomeInterfaceImp) GetServices() ([]*model.ServiceModel, error) {
 	}
 
 	fmt.Println("=== Services表查询完成 ===")
+
+	return services, err
+}
+
+// GetServicesByCategory 根据分类获取服务项列表
+func (imp *HomeInterfaceImp) GetServicesByCategory(category string) ([]*model.ServiceModel, error) {
+	var services []*model.ServiceModel
+	cli := db.Get()
+
+	err := cli.Table("Services").
+		Select("id, serviceitemid, name, description, icon, imageUrl, linkUrl, price, category, sort, status, createdAt, updatedAt").
+		Where("status = ? AND category = ?", 1, category).
+		Order("sort ASC, id DESC").
+		Find(&services).Error
 
 	return services, err
 }

@@ -26,10 +26,11 @@ type HomeInitResponse struct {
 
 // HomeInitData 首页数据
 type HomeInitData struct {
-	Banners     []interface{} `json:"banners"`     // 轮播图
-	Navigations []interface{} `json:"navigations"` // 导航
-	Services    []interface{} `json:"services"`    // 服务项
-	Hospitals   []interface{} `json:"hospitals"`   // 医院列表
+	Banners           []interface{} `json:"banners"`           // 轮播图
+	Navigations       []interface{} `json:"navigations"`       // 导航
+	Services          []interface{} `json:"services"`          // 服务项
+	Hospitals         []interface{} `json:"hospitals"`         // 医院列表
+	CaregiverServices []interface{} `json:"caregiverServices"` // 护工服务列表
 }
 
 // HomeInitHandler 首页初始化接口
@@ -224,11 +225,53 @@ func getHomeInitData(req *HomeInitRequest) (*HomeInitData, error) {
 	})
 	data.Hospitals = convertHospitalsToInterface(hospitals)
 
+	// 获取护工服务列表（从Services表获取，按分类组织）
+	LogStep("开始查询护工服务数据", nil)
+
+	// 获取所有分类的护工服务
+	caregiverServices := make([]interface{}, 0)
+
+	// 居家照护类服务
+	homeCareServices, err := dao.HomeImp.GetServicesByCategory("居家照护")
+	if err == nil && len(homeCareServices) > 0 {
+		caregiverServices = append(caregiverServices, convertServicesToInterface(homeCareServices)...)
+	}
+
+	// 医院陪诊类服务
+	hospitalEscortServices, err := dao.HomeImp.GetServicesByCategory("医院陪诊")
+	if err == nil && len(hospitalEscortServices) > 0 {
+		caregiverServices = append(caregiverServices, convertServicesToInterface(hospitalEscortServices)...)
+	}
+
+	// 周期护理类服务
+	periodicCareServices, err := dao.HomeImp.GetServicesByCategory("周期护理")
+	if err == nil && len(periodicCareServices) > 0 {
+		caregiverServices = append(caregiverServices, convertServicesToInterface(periodicCareServices)...)
+	}
+
+	// 家政服务类服务
+	housekeepingServices, err := dao.HomeImp.GetServicesByCategory("家政服务")
+	if err == nil && len(housekeepingServices) > 0 {
+		caregiverServices = append(caregiverServices, convertServicesToInterface(housekeepingServices)...)
+	}
+
+	// 如果没有找到任何护工服务，使用默认数据
+	if len(caregiverServices) == 0 {
+		LogError("未找到护工服务数据，使用默认数据", nil)
+		data.CaregiverServices = getDefaultCaregiverServices()
+	} else {
+		LogStep("护工服务数据查询成功", map[string]interface{}{
+			"caregiverServiceCount": len(caregiverServices),
+		})
+		data.CaregiverServices = caregiverServices
+	}
+
 	LogStep("首页数据获取完成", map[string]interface{}{
-		"bannerCount":     len(data.Banners),
-		"navigationCount": len(data.Navigations),
-		"serviceCount":    len(data.Services),
-		"hospitalCount":   len(data.Hospitals),
+		"bannerCount":           len(data.Banners),
+		"navigationCount":       len(data.Navigations),
+		"serviceCount":          len(data.Services),
+		"hospitalCount":         len(data.Hospitals),
+		"caregiverServiceCount": len(data.CaregiverServices),
 	})
 
 	return data, nil
@@ -301,4 +344,60 @@ func convertHospitalsToInterface(hospitals []*model.HospitalModel) []interface{}
 		}
 	}
 	return result
+}
+
+// getDefaultCaregiverServices 获取默认护工服务数据
+func getDefaultCaregiverServices() []interface{} {
+	return []interface{}{
+		map[string]interface{}{
+			"id":            1,
+			"serviceitemid": 1,
+			"name":          "慢病照护",
+			"description":   "生活支援,守护健康",
+			"imageUrl":      "/images/service/chronic-care.jpg",
+			"price":         4880.0,
+			"category":      "居家照护",
+			"sort":          1,
+		},
+		map[string]interface{}{
+			"id":            2,
+			"serviceitemid": 2,
+			"name":          "居家术后照护",
+			"description":   "省心省力、全天照护",
+			"imageUrl":      "/images/service/post-surgery.jpg",
+			"price":         5580.0,
+			"category":      "居家照护",
+			"sort":          2,
+		},
+		map[string]interface{}{
+			"id":            3,
+			"serviceitemid": 3,
+			"name":          "康复照护",
+			"description":   "偏瘫、肢体康复训练",
+			"imageUrl":      "/images/service/rehabilitation.jpg",
+			"price":         6280.0,
+			"category":      "周期护理",
+			"sort":          3,
+		},
+		map[string]interface{}{
+			"id":            4,
+			"serviceitemid": 4,
+			"name":          "认知症照护",
+			"description":   "认知症(阿尔兹海默病)习惯培养、守护健康",
+			"imageUrl":      "/images/service/dementia-care.jpg",
+			"price":         4980.0,
+			"category":      "居家照护",
+			"sort":          4,
+		},
+		map[string]interface{}{
+			"id":            5,
+			"serviceitemid": 5,
+			"name":          "肌无力照护",
+			"description":   "行动支持、安全防护",
+			"imageUrl":      "/images/service/muscle-weakness.jpg",
+			"price":         5380.0,
+			"category":      "居家照护",
+			"sort":          5,
+		},
+	}
 }

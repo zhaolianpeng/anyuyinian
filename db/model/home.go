@@ -35,6 +35,8 @@ type ServiceModel struct {
 	Icon          string    `gorm:"column:icon;not null" json:"icon"`
 	ImageUrl      string    `gorm:"column:imageUrl" json:"imageUrl"`
 	LinkUrl       string    `gorm:"column:linkUrl" json:"linkUrl"`
+	Price         float64   `gorm:"column:price" json:"price"`       // 服务价格
+	Category      string    `gorm:"column:category" json:"category"` // 服务分类
 	Sort          int       `gorm:"column:sort;default:0" json:"sort"`
 	Status        int       `gorm:"column:status;default:1" json:"status"` // 1-启用，0-禁用
 	CreatedAt     time.Time `gorm:"column:createdAt" json:"createdAt"`

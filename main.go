@@ -1,11 +1,11 @@
 package main
 
 import (
-    "fmt"
-    "log"
-    "net/http"
-    "wxcloudrun-golang/db"
-    "wxcloudrun-golang/service"
+	"fmt"
+	"log"
+	"net/http"
+	"wxcloudrun-golang/db"
+	"wxcloudrun-golang/service"
 )
 
 func main() {
@@ -117,11 +117,22 @@ func main() {
 	http.HandleFunc("/api/admin/stats", service.NewLogMiddleware(service.AdminStatsHandler))
 	http.HandleFunc("/api/admin/admins", service.NewLogMiddleware(service.AdminAdminsHandler))
 	http.HandleFunc("/api/admin/order/update-amount", service.NewLogMiddleware(service.UpdateOrderAmountHandler))
-    http.HandleFunc("/api/admin/order/refund", service.NewLogMiddleware(service.AdminRefundOrderHandler))
+	http.HandleFunc("/api/admin/order/refund", service.NewLogMiddleware(service.AdminRefundOrderHandler))
 
-    // 管理员服务管理相关接口
-    http.HandleFunc("/api/admin/services", service.NewLogMiddleware(service.GetAdminServicesHandler))
-    http.HandleFunc("/api/admin/service/update-price", service.NewLogMiddleware(service.UpdateServicePriceHandler))
+	// 管理员服务管理相关接口
+	http.HandleFunc("/api/admin/services", service.NewLogMiddleware(service.GetAdminServicesHandler))
+	http.HandleFunc("/api/admin/service/update-price", service.NewLogMiddleware(service.UpdateServicePriceHandler))
+
+	// 咨询相关接口
+	http.HandleFunc("/api/consultation/create", service.NewLogMiddleware(service.CreateConsultationHandler))
+	http.HandleFunc("/api/consultation/messages", service.NewLogMiddleware(service.GetConsultationMessagesHandler))
+	http.HandleFunc("/api/consultation/send", service.NewLogMiddleware(service.SendConsultationMessageHandler))
+	http.HandleFunc("/api/consultation/status", service.NewLogMiddleware(service.GetConsultationStatusHandler))
+	http.HandleFunc("/api/consultation/close", service.NewLogMiddleware(service.CloseConsultationHandler))
+	http.HandleFunc("/api/consultation/active", service.NewLogMiddleware(service.GetActiveConsultationsHandler))
+	http.HandleFunc("/api/consultation/stats", service.NewLogMiddleware(service.GetConsultationStatsHandler))
+	http.HandleFunc("/api/consultation/notifications", service.NewLogMiddleware(service.GetUnreadNotificationsHandler))
+	http.HandleFunc("/api/consultation/notification/read", service.NewLogMiddleware(service.MarkNotificationAsReadHandler))
 
 	log.Fatal(http.ListenAndServe(":80", nil))
 }

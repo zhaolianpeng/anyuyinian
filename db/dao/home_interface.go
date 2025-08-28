@@ -14,6 +14,7 @@ type HomeInterface interface {
 
 	// 服务项相关
 	GetServices() ([]*model.ServiceModel, error)
+	GetServicesByCategory(category string) ([]*model.ServiceModel, error)
 
 	// 医院相关
 	GetHospitals(limit int) ([]*model.HospitalModel, error)
