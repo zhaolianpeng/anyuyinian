@@ -2,6 +2,7 @@ package service
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 )
@@ -14,9 +15,9 @@ func CreateConsultationHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var req struct {
-		UserID    string `json:"userId"`
-		UserName  string `json:"userName"`
-		UserPhone string `json:"userPhone"`
+		UserID    interface{} `json:"userId"` // 使用interface{}接受任何类型
+		UserName  string      `json:"userName"`
+		UserPhone string      `json:"userPhone"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -30,9 +31,20 @@ func CreateConsultationHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// 转换UserID为字符串
+	var userID string
+	switch v := req.UserID.(type) {
+	case string:
+		userID = v
+	case int, int32, int64, float32, float64:
+		userID = fmt.Sprintf("%v", v)
+	default:
+		userID = fmt.Sprintf("%v", v)
+	}
+
 	// 创建咨询会话
 	consultationService := NewConsultationService()
-	consultation, err := consultationService.CreateConsultation(req.UserID, req.UserName, req.UserPhone)
+	consultation, err := consultationService.CreateConsultation(userID, req.UserName, req.UserPhone)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

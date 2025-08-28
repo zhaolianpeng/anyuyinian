@@ -37,7 +37,8 @@ func NewLogMiddleware(handler http.HandlerFunc) http.HandlerFunc {
 			} else {
 				log.Printf("[API] 请求体: %s", string(body))
 				// 重新设置请求体，因为已经被读取了
-				r.Body = io.NopCloser(bytes.NewBuffer(body))
+				// 使用更可靠的方式重新设置请求体
+				r.Body = io.NopCloser(bytes.NewReader(body))
 			}
 		}
 
