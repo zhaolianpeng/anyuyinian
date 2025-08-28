@@ -124,9 +124,9 @@ func SendConsultationMessageHandler(w http.ResponseWriter, r *http.Request) {
 	log.Printf("[DEBUG] 请求体内容: %s", string(body))
 
 	var req struct {
-		ConsultationID uint   `json:"consultationId"`
-		Content        string `json:"content"`
-		SenderType     string `json:"senderType"`
+		ConsultationID interface{} `json:"consultationId"` // 使用interface{}接受字符串或数字
+		Content        string      `json:"content"`
+		SenderType     string      `json:"senderType"`
 	}
 
 	if err := json.Unmarshal(body, &req); err != nil {
@@ -135,14 +135,10 @@ func SendConsultationMessageHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Printf("[DEBUG] 解析后的请求: ConsultationID=%d, Content=%s, SenderType=%s",
+	log.Printf("[DEBUG] 解析后的请求: ConsultationID=%v, Content=%s, SenderType=%s",
 		req.ConsultationID, req.Content, req.SenderType)
 
 	// 验证请求参数
-	if req.ConsultationID == 0 {
-		http.Error(w, "ConsultationID is required", http.StatusBadRequest)
-		return
-	}
 	if req.Content == "" {
 		http.Error(w, "Content is required", http.StatusBadRequest)
 		return
@@ -152,9 +148,41 @@ func SendConsultationMessageHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// 转换ConsultationID为uint
+	var consultationID uint
+	switch v := req.ConsultationID.(type) {
+	case string:
+		if id, err := strconv.ParseUint(v, 10, 32); err != nil {
+			log.Printf("[ERROR] ConsultationID转换失败: %v", err)
+			http.Error(w, "Invalid ConsultationID format", http.StatusBadRequest)
+			return
+		} else {
+			consultationID = uint(id)
+		}
+	case float64:
+		consultationID = uint(v)
+	case int:
+		consultationID = uint(v)
+	case int32:
+		consultationID = uint(v)
+	case int64:
+		consultationID = uint(v)
+	default:
+		log.Printf("[ERROR] 不支持的ConsultationID类型: %T", req.ConsultationID)
+		http.Error(w, "Invalid ConsultationID type", http.StatusBadRequest)
+		return
+	}
+
+	if consultationID == 0 {
+		http.Error(w, "ConsultationID is required", http.StatusBadRequest)
+		return
+	}
+
+	log.Printf("[DEBUG] 转换后的ConsultationID: %d", consultationID)
+
 	// 发送消息
 	consultationService := NewConsultationService()
-	message, err := consultationService.SendMessage(req.ConsultationID, req.Content, req.SenderType)
+	message, err := consultationService.SendMessage(consultationID, req.Content, req.SenderType)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
