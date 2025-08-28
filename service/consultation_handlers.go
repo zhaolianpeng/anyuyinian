@@ -3,6 +3,8 @@ package service
 import (
 	"encoding/json"
 	"fmt"
+	"io"
+	"log"
 	"net/http"
 	"strconv"
 )
@@ -108,16 +110,33 @@ func SendConsultationMessageHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// 添加调试日志
+	log.Printf("[DEBUG] 开始处理发送消息请求")
+
+	// 重新读取请求体
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		log.Printf("[ERROR] 读取请求体失败: %v", err)
+		http.Error(w, "Failed to read request body", http.StatusBadRequest)
+		return
+	}
+
+	log.Printf("[DEBUG] 请求体内容: %s", string(body))
+
 	var req struct {
 		ConsultationID uint   `json:"consultationId"`
 		Content        string `json:"content"`
 		SenderType     string `json:"senderType"`
 	}
 
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	if err := json.Unmarshal(body, &req); err != nil {
+		log.Printf("[ERROR] JSON解析失败: %v", err)
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
+
+	log.Printf("[DEBUG] 解析后的请求: ConsultationID=%d, Content=%s, SenderType=%s",
+		req.ConsultationID, req.Content, req.SenderType)
 
 	// 验证请求参数
 	if req.ConsultationID == 0 {
