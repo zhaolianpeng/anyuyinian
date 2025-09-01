@@ -48,11 +48,13 @@ func main() {
 
 	// 服务相关接口
 	http.HandleFunc("/api/service/list", service.NewLogMiddleware(service.ServiceListHandler))
+	http.HandleFunc("/api/service/categories", service.NewLogMiddleware(service.ServiceCategoriesHandler))
 	http.HandleFunc("/api/service/detail", service.NewLogMiddleware(service.ServiceDetailHandler))
 	http.HandleFunc("/api/service/form_config/", service.NewLogMiddleware(service.ServiceFormConfigHandler))
 
 	// 订单相关接口
 	http.HandleFunc("/api/order/submit", service.NewLogMiddleware(service.SubmitOrderHandler))
+	http.HandleFunc("/api/order/smart-elderly", service.NewLogMiddleware(service.SmartElderlyOrderHandler))
 	http.HandleFunc("/api/order/pay/", service.NewLogMiddleware(service.PayOrderHandler))
 	http.HandleFunc("/api/order/pay_confirm/", service.NewLogMiddleware(service.PayConfirmHandler))
 	http.HandleFunc("/api/order/cancel/", service.NewLogMiddleware(service.CancelOrderHandler))

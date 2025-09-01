@@ -10,6 +10,7 @@ type ServiceInterface interface {
 	GetServicesByCategory(category string, page, pageSize int) ([]*model.ServiceItemModel, int64, error)
 	GetAllServices(page, pageSize int) ([]*model.ServiceItemModel, int64, error)
 	GetServiceCategories() ([]string, error)
+	GetServiceCategoriesWithCount() ([]CategoryCount, error)
 	CreateService(service *model.ServiceItemModel) error
 	UpdateService(service *model.ServiceItemModel) error
 	DeleteService(id int32) error

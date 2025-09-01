@@ -34,6 +34,18 @@ type ServiceListResponse struct {
 	HasMore  bool                      `json:"hasMore"`
 }
 
+// ServiceCategoriesResponse 服务分类响应
+type ServiceCategoriesResponse struct {
+	Categories []ServiceCategory `json:"categories"`
+}
+
+// ServiceCategory 服务分类
+type ServiceCategory struct {
+	Name  string `json:"name"`
+	Value string `json:"value"`
+	Count int64  `json:"count"`
+}
+
 // FormConfig 表单配置
 type FormConfig struct {
 	Fields []FormField `json:"fields"`
@@ -170,6 +182,73 @@ func ServiceListHandler(w http.ResponseWriter, r *http.Request) {
 		"page":         page,
 		"pageSize":     pageSize,
 		"hasMore":      hasMore,
+	})
+}
+
+// ServiceCategoriesHandler 获取服务分类列表接口
+func ServiceCategoriesHandler(w http.ResponseWriter, r *http.Request) {
+	LogInfo("开始处理获取服务分类列表请求", map[string]interface{}{
+		"method": r.Method,
+		"path":   r.URL.Path,
+	})
+
+	if r.Method != http.MethodGet {
+		LogError("请求方法不支持", fmt.Errorf("期望GET方法，实际为%s", r.Method))
+		http.Error(w, "只支持GET请求", http.StatusMethodNotAllowed)
+		return
+	}
+
+	LogStep("开始查询服务分类列表", nil)
+
+	// 获取所有分类及其服务数量
+	categories, err := dao.ServiceImp.GetServiceCategoriesWithCount()
+	if err != nil {
+		LogError("数据库查询服务分类失败", err)
+		response := &ServiceResponse{
+			Code:     -1,
+			ErrorMsg: "获取服务分类失败: " + err.Error(),
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(response)
+		return
+	}
+
+	LogStep("服务分类查询成功", map[string]interface{}{
+		"categoryCount": len(categories),
+	})
+
+	// 构建分类响应
+	var categoryList []ServiceCategory
+
+	// 添加"全部"分类
+	categoryList = append(categoryList, ServiceCategory{
+		Name:  "全部",
+		Value: "",
+		Count: 0, // 全部分类的数量会在前端计算
+	})
+
+	// 添加有服务的分类
+	for _, cat := range categories {
+		if cat.Count > 0 { // 只显示有服务的分类
+			categoryList = append(categoryList, ServiceCategory{
+				Name:  cat.Name,
+				Value: cat.Category,
+				Count: cat.Count,
+			})
+		}
+	}
+
+	response := &ServiceResponse{
+		Code: 0,
+		Data: &ServiceCategoriesResponse{
+			Categories: categoryList,
+		},
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+
+	LogInfo("服务分类列表获取成功", map[string]interface{}{
+		"categoryCount": len(categoryList),
 	})
 }
 

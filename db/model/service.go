@@ -13,6 +13,7 @@ type ServiceItemModel struct {
 	ImageUrl      string    `gorm:"column:imageUrl" json:"imageUrl"`
 	DetailImages  string    `gorm:"column:detailImages" json:"detailImages"` // JSON数组
 	FormConfig    string    `gorm:"column:formConfig" json:"formConfig"`     // JSON配置
+	VideoUrl      string    `gorm:"column:videoUrl" json:"videoUrl"`         // 视频URL
 	Status        int       `gorm:"column:status;default:1" json:"status"`   // 1-上架，0-下架
 	Sort          int       `gorm:"column:sort;default:0" json:"sort"`
 	CreatedAt     time.Time `gorm:"column:createdAt" json:"createdAt"`

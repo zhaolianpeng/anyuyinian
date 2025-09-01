@@ -125,79 +125,7 @@ func SubmitOrderHandler(w http.ResponseWriter, r *http.Request) {
 		"formDataCount":   len(req.FormData),
 	})
 
-	// 验证参数
-	if req.UserId == "" || req.ServiceId == 0 || req.PatientId == 0 || req.AddressId == 0 {
-		LogError("缺少必要参数", fmt.Errorf("userId=%s, serviceId=%d, patientId=%d, addressId=%d", req.UserId, req.ServiceId, req.PatientId, req.AddressId))
-		http.Error(w, "缺少必要参数", http.StatusBadRequest)
-		return
-	}
-
-	// 验证预约时间
-	if req.AppointmentDate == "" || req.AppointmentTime == "" {
-		LogError("缺少预约时间", fmt.Errorf("appointmentDate=%s, appointmentTime=%s", req.AppointmentDate, req.AppointmentTime))
-		http.Error(w, "请选择预约时间", http.StatusBadRequest)
-		return
-	}
-
-	// 验证预约时间是否在允许范围内（明天开始，未来7天）
-	appointmentDateTime, err := time.Parse("2006-01-02 15:04", req.AppointmentDate+" "+req.AppointmentTime)
-	if err != nil {
-		LogError("预约时间格式错误", err)
-		http.Error(w, "预约时间格式错误", http.StatusBadRequest)
-		return
-	}
-
-	tomorrow := time.Now().AddDate(0, 0, 1)
-	tomorrow = time.Date(tomorrow.Year(), tomorrow.Month(), tomorrow.Day(), 0, 0, 0, 0, tomorrow.Location())
-
-	maxDate := time.Now().AddDate(0, 0, 7)
-	maxDate = time.Date(maxDate.Year(), maxDate.Month(), maxDate.Day(), 23, 59, 59, 0, maxDate.Location())
-
-	if appointmentDateTime.Before(tomorrow) {
-		LogError("预约时间过早", fmt.Errorf("appointmentDateTime=%v, tomorrow=%v", appointmentDateTime, tomorrow))
-		http.Error(w, "预约时间不能早于明天", http.StatusBadRequest)
-		return
-	}
-
-	if appointmentDateTime.After(maxDate) {
-		LogError("预约时间过晚", fmt.Errorf("appointmentDateTime=%v, maxDate=%v", appointmentDateTime, maxDate))
-		http.Error(w, "预约时间不能超过7天后", http.StatusBadRequest)
-		return
-	}
-
-	// 验证时间槽是否在允许范围内
-	allowedTimeSlots := []string{
-		"08:00", "09:00", "10:00", "11:00",
-		"14:00", "15:00", "16:00", "17:00", "18:00", "19:00",
-	}
-
-	isValidTimeSlot := false
-	for _, slot := range allowedTimeSlots {
-		if req.AppointmentTime == slot {
-			isValidTimeSlot = true
-			break
-		}
-	}
-
-	if !isValidTimeSlot {
-		LogError("预约时间不在允许的时间段内", fmt.Errorf("appointmentTime=%s, allowedSlots=%v", req.AppointmentTime, allowedTimeSlots))
-		http.Error(w, "预约时间不在允许的时间段内", http.StatusBadRequest)
-		return
-	}
-
-	LogStep("预约时间验证通过", map[string]interface{}{
-		"appointmentDateTime": appointmentDateTime,
-		"tomorrow":            tomorrow,
-		"maxDate":             maxDate,
-		"appointmentTime":     req.AppointmentTime,
-		"allowedTimeSlots":    allowedTimeSlots,
-	})
-
-	// 获取服务信息
-	LogStep("开始查询服务信息", map[string]interface{}{
-		"serviceId": req.ServiceId,
-	})
-
+	// 获取服务信息以判断是否为智慧养老设备
 	service, err := dao.ServiceImp.GetServiceById(req.ServiceId)
 	if err != nil {
 		LogError("数据库查询服务信息失败", err)
@@ -210,10 +138,88 @@ func SubmitOrderHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	isSmartElderly := service.Category == "智慧养老"
+
+	// 验证参数
+	if req.UserId == "" || req.ServiceId == 0 || req.AddressId == 0 {
+		LogError("缺少必要参数", fmt.Errorf("userId=%s, serviceId=%d, addressId=%d", req.UserId, req.ServiceId, req.AddressId))
+		http.Error(w, "缺少必要参数", http.StatusBadRequest)
+		return
+	}
+
+	// 对于非智慧养老设备，需要验证患者信息和预约时间
+	if !isSmartElderly {
+		if req.PatientId == 0 {
+			LogError("缺少患者信息", fmt.Errorf("patientId=%d", req.PatientId))
+			http.Error(w, "请选择就诊人", http.StatusBadRequest)
+			return
+		}
+
+		if req.AppointmentDate == "" || req.AppointmentTime == "" {
+			LogError("缺少预约时间", fmt.Errorf("appointmentDate=%s, appointmentTime=%s", req.AppointmentDate, req.AppointmentTime))
+			http.Error(w, "请选择预约时间", http.StatusBadRequest)
+			return
+		}
+	}
+
+	// 对于非智慧养老设备，验证预约时间
+	if !isSmartElderly {
+		// 验证预约时间是否在允许范围内（明天开始，未来7天）
+		appointmentDateTime, err := time.Parse("2006-01-02 15:04", req.AppointmentDate+" "+req.AppointmentTime)
+		if err != nil {
+			LogError("预约时间格式错误", err)
+			http.Error(w, "预约时间格式错误", http.StatusBadRequest)
+			return
+		}
+
+		tomorrow := time.Now().AddDate(0, 0, 1)
+		tomorrow = time.Date(tomorrow.Year(), tomorrow.Month(), tomorrow.Day(), 0, 0, 0, 0, tomorrow.Location())
+
+		maxDate := time.Now().AddDate(0, 0, 7)
+		maxDate = time.Date(maxDate.Year(), maxDate.Month(), maxDate.Day(), 23, 59, 59, 0, maxDate.Location())
+
+		if appointmentDateTime.Before(tomorrow) {
+			LogError("预约时间过早", fmt.Errorf("appointmentDateTime=%v, tomorrow=%v", appointmentDateTime, tomorrow))
+			http.Error(w, "预约时间不能早于明天", http.StatusBadRequest)
+			return
+		}
+
+		if appointmentDateTime.After(maxDate) {
+			LogError("预约时间过晚", fmt.Errorf("appointmentDateTime=%v, maxDate=%v", appointmentDateTime, maxDate))
+			http.Error(w, "预约时间不能超过7天后", http.StatusBadRequest)
+			return
+		}
+
+		// 验证时间槽是否在允许范围内
+		allowedTimeSlots := []string{
+			"08:00", "09:00", "10:00", "11:00",
+			"14:00", "15:00", "16:00", "17:00", "18:00", "19:00",
+		}
+
+		isValidTimeSlot := false
+		for _, slot := range allowedTimeSlots {
+			if req.AppointmentTime == slot {
+				isValidTimeSlot = true
+				break
+			}
+		}
+
+		if !isValidTimeSlot {
+			LogError("预约时间不在允许的时间段内", fmt.Errorf("appointmentTime=%s, allowedSlots=%v", req.AppointmentTime, allowedTimeSlots))
+			http.Error(w, "预约时间不在允许的时间段内", http.StatusBadRequest)
+			return
+		}
+	}
+
+	LogStep("预约时间验证通过", map[string]interface{}{
+		"isSmartElderly": isSmartElderly,
+	})
+
 	LogStep("服务信息查询成功", map[string]interface{}{
 		"serviceId":   service.Id,
 		"serviceName": service.Name,
 		"price":       service.Price,
+		"category":    service.Category,
 	})
 
 	// 生成订单号
@@ -265,14 +271,12 @@ func SubmitOrderHandler(w http.ResponseWriter, r *http.Request) {
 	// 设置支付截止时间（30分钟后）
 	payDeadline := time.Now().Add(30 * time.Minute)
 
+	// 创建订单对象，根据服务类型设置字段
 	order := &model.OrderModel{
 		OrderNo:          orderNo,
 		UserId:           req.UserId,
 		ServiceId:        req.ServiceId,
-		PatientId:        req.PatientId,
 		AddressId:        req.AddressId,
-		AppointmentDate:  req.AppointmentDate,
-		AppointmentTime:  req.AppointmentTime,
 		DiseaseInfo:      req.DiseaseInfo,
 		NeedToiletAssist: needToiletAssist,
 		ServiceName:      service.Name,
@@ -286,6 +290,19 @@ func SubmitOrderHandler(w http.ResponseWriter, r *http.Request) {
 		ReferrerId:       req.ReferrerId,
 		Commission:       commission,
 		Remark:           req.Remark,
+	}
+
+	// 根据服务类型设置患者信息和预约时间
+	if isSmartElderly {
+		// 智慧养老设备不需要患者信息和预约时间
+		order.PatientId = nil
+		order.AppointmentDate = nil
+		order.AppointmentTime = nil
+	} else {
+		// 普通服务需要患者信息和预约时间
+		order.PatientId = &req.PatientId
+		order.AppointmentDate = &req.AppointmentDate
+		order.AppointmentTime = &req.AppointmentTime
 	}
 
 	LogStep("开始保存订单到数据库", map[string]interface{}{
@@ -1007,13 +1024,22 @@ func OrderListHandler(w http.ResponseWriter, r *http.Request) {
 			"formattedDate": formattedDate,
 		})
 
+		// 处理预约时间字段，处理nil值
+		var appointmentDate, appointmentTime string
+		if order.AppointmentDate != nil {
+			appointmentDate = *order.AppointmentDate
+		}
+		if order.AppointmentTime != nil {
+			appointmentTime = *order.AppointmentTime
+		}
+
 		orderItem := &OrderListItem{
 			Id:              order.Id,
 			OrderNo:         order.OrderNo,
 			ServiceName:     order.ServiceName,
 			ServiceTitle:    order.ServiceName, // 使用服务名称作为标题
-			AppointmentDate: order.AppointmentDate,
-			AppointmentTime: order.AppointmentTime,
+			AppointmentDate: appointmentDate,
+			AppointmentTime: appointmentTime,
 			ConsultTime:     consultTime,
 			Price:           order.Price, // 添加价格字段
 			TotalAmount:     order.TotalAmount,
@@ -1112,8 +1138,8 @@ func OrderDetailHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 获取患者信息
-	if order.PatientId > 0 {
-		patient, err := dao.UserExtendImp.GetPatientById(order.PatientId)
+	if order.PatientId != nil && *order.PatientId > 0 {
+		patient, err := dao.UserExtendImp.GetPatientById(*order.PatientId)
 		if err == nil && patient != nil {
 			detailResponse.PatientName = patient.Name
 			detailResponse.PatientPhone = patient.Phone

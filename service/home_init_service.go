@@ -255,6 +255,12 @@ func getHomeInitData(req *HomeInitRequest) (*HomeInitData, error) {
 		caregiverServices = append(caregiverServices, convertServicesToInterface(housekeepingServices)...)
 	}
 
+	// 智慧养老设备服务
+	smartElderlyServices, err := dao.HomeImp.GetServicesByCategory("智慧养老")
+	if err == nil && len(smartElderlyServices) > 0 {
+		caregiverServices = append(caregiverServices, convertServicesToInterface(smartElderlyServices)...)
+	}
+
 	// 如果没有找到任何护工服务，使用默认数据
 	if len(caregiverServices) == 0 {
 		LogError("未找到护工服务数据，使用默认数据", nil)

@@ -8,10 +8,10 @@ type OrderModel struct {
 	OrderNo          string     `gorm:"column:orderNo;uniqueIndex;not null" json:"orderNo"`
 	UserId           string     `gorm:"column:userId;not null;type:varchar(24)" json:"userId"`
 	ServiceId        int32      `gorm:"column:serviceId;not null" json:"serviceId"`
-	PatientId        int32      `gorm:"column:patientId;not null" json:"patientId"`                // 患者ID
+	PatientId        *int32     `gorm:"column:patientId" json:"patientId"`                         // 患者ID（智慧养老设备可为空）
 	AddressId        int32      `gorm:"column:addressId;not null" json:"addressId"`                // 地址ID
-	AppointmentDate  string     `gorm:"column:appointmentDate;not null" json:"appointmentDate"`    // 预约日期
-	AppointmentTime  string     `gorm:"column:appointmentTime;not null" json:"appointmentTime"`    // 预约时间
+	AppointmentDate  *string    `gorm:"column:appointmentDate" json:"appointmentDate"`             // 预约日期（智慧养老设备可为空）
+	AppointmentTime  *string    `gorm:"column:appointmentTime" json:"appointmentTime"`             // 预约时间（智慧养老设备可为空）
 	DiseaseInfo      string     `gorm:"column:diseaseInfo" json:"diseaseInfo"`                     // 既往病史
 	NeedToiletAssist int        `gorm:"column:needToiletAssist;default:0" json:"needToiletAssist"` // 是否需要助排二便：0-不需要，1-需要
 	ServiceName      string     `gorm:"column:serviceName;not null" json:"serviceName"`

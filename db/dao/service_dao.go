@@ -64,6 +64,13 @@ func (imp *ServiceInterfaceImp) GetAllServices(page, pageSize int) ([]*model.Ser
 	return services, total, err
 }
 
+// CategoryCount 分类数量结构
+type CategoryCount struct {
+	Category string `json:"category"`
+	Name     string `json:"name"`
+	Count    int64  `json:"count"`
+}
+
 // GetServiceCategories 获取服务分类列表
 func (imp *ServiceInterfaceImp) GetServiceCategories() ([]string, error) {
 	var categories []string
@@ -73,6 +80,46 @@ func (imp *ServiceInterfaceImp) GetServiceCategories() ([]string, error) {
 		Distinct("category").
 		Pluck("category", &categories).Error
 	return categories, err
+}
+
+// GetServiceCategoriesWithCount 获取服务分类列表及其数量
+func (imp *ServiceInterfaceImp) GetServiceCategoriesWithCount() ([]CategoryCount, error) {
+	var categories []CategoryCount
+	cli := db.Get()
+
+	// 查询每个分类的服务数量
+	err := cli.Table(serviceTableName).
+		Where("status = ?", 1).
+		Select("category, COUNT(*) as count").
+		Group("category").
+		Order("count DESC").
+		Scan(&categories).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	// 为每个分类设置显示名称
+	for i := range categories {
+		switch categories[i].Category {
+		case "居家照护":
+			categories[i].Name = "居家照护"
+		case "医院陪诊":
+			categories[i].Name = "医院陪诊"
+		case "周期护理":
+			categories[i].Name = "周期护理"
+		case "家政服务":
+			categories[i].Name = "家政服务"
+		case "预约咨询":
+			categories[i].Name = "预约咨询"
+		case "智慧养老":
+			categories[i].Name = "智慧养老"
+		default:
+			categories[i].Name = categories[i].Category
+		}
+	}
+
+	return categories, nil
 }
 
 // CreateService 创建服务
