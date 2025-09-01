@@ -188,6 +188,10 @@ chmod +x test_smart_elderly_services.sh
 chmod +x test_categories_api.sh
 ./test_categories_api.sh
 
+# 测试首页分类加载
+chmod +x test_homepage_categories.sh
+./test_homepage_categories.sh
+
 # 测试兼容性
 chmod +x test_compatibility.sh
 ./test_compatibility.sh

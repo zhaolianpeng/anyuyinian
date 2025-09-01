@@ -82,6 +82,30 @@ async loadCategories() {
     console.error('加载分类失败:', error)
   }
 }
+
+// 修改首页页面
+data: {
+  serviceCategories: [
+    { name: '居家照护', value: '居家照护' } // 只保留默认分类
+  ]
+},
+
+// 新增loadServiceCategories方法
+async loadServiceCategories() {
+  try {
+    const res = await api.serviceCategories()
+    if (res.code === 0 && res.data && res.data.categories) {
+      const categories = res.data.categories
+      // 过滤掉"全部"分类，只保留具体分类
+      const filteredCategories = categories.filter(cat => cat.value !== '')
+      this.setData({
+        serviceCategories: filteredCategories
+      })
+    }
+  } catch (error) {
+    console.error('加载服务分类失败:', error)
+  }
+}
 ```
 
 #### 2.2 API配置
@@ -93,7 +117,7 @@ serviceCategories: () => callContainer('/api/service/categories', 'GET'),
 ### 3. 显示逻辑
 
 #### 3.1 智慧养老分类显示条件
-- ✅ **有智慧养老服务**: 分类显示在服务列表页面
+- ✅ **有智慧养老服务**: 分类显示在服务列表页面和首页
 - ❌ **无智慧养老服务**: 分类自动隐藏，不显示在分类标签中
 
 #### 3.2 其他分类显示条件
@@ -117,20 +141,20 @@ serviceCategories: () => callContainer('/api/service/categories', 'GET'),
 #### 场景1: 有智慧养老服务
 1. 数据库中有智慧养老设备数据
 2. 分类API返回智慧养老分类
-3. 前端服务列表页面显示智慧养老分类标签
+3. 前端服务列表页面和首页都显示智慧养老分类标签
 4. 用户可以点击智慧养老分类查看相关服务
 
 #### 场景2: 无智慧养老服务
 1. 数据库中没有智慧养老设备数据
 2. 分类API不返回智慧养老分类
-3. 前端服务列表页面不显示智慧养老分类标签
+3. 前端服务列表页面和首页都不显示智慧养老分类标签
 4. 用户看不到智慧养老分类
 
 ### 3. 验证要点
 - ✅ 分类API正常工作
 - ✅ 智慧养老分类数量匹配数据库
 - ✅ 空分类被正确过滤
-- ✅ 前端动态加载分类
+- ✅ 前端动态加载分类（服务列表页面和首页）
 - ✅ 分类显示逻辑符合预期
 
 ## 文件清单
@@ -143,10 +167,12 @@ serviceCategories: () => callContainer('/api/service/categories', 'GET'),
 
 ### 前端文件
 - `pages/service/list.js` - 修改为动态加载分类
+- `pages/index/index.js` - 修改为动态加载分类
 - `utils/cloud-container-standard.js` - 添加serviceCategories API
 
 ### 测试文件
 - `tests/smart_elderly/test_categories_api.sh` - 分类API测试脚本
+- `tests/smart_elderly/test_homepage_categories.sh` - 首页分类加载测试脚本
 
 ## 部署说明
 
