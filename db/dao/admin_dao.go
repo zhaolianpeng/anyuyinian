@@ -15,11 +15,19 @@ func (a *AdminImp) AdminLogin(username, password string) (*model.UserModel, erro
 	var user model.UserModel
 	cli := db.Get()
 
+	// 记录SQL操作日志
+	logger := NewSQLLogger("查询", "Users", map[string]interface{}{
+		"operation": "AdminLogin",
+		"username":  username,
+	})
+
 	err := cli.Table("Users").Where("adminUsername = ? AND adminPassword = ? AND isAdmin = 1", username, password).First(&user).Error
 	if err != nil {
+		logger.LogQuery(nil, err)
 		return nil, fmt.Errorf("管理员登录失败: %v", err)
 	}
 
+	logger.LogQuery(&user, err)
 	return &user, nil
 }
 
@@ -28,11 +36,19 @@ func (a *AdminImp) GetAdminByUserId(userId string) (*model.UserModel, error) {
 	var user model.UserModel
 	cli := db.Get()
 
+	// 记录SQL操作日志
+	logger := NewSQLLogger("查询", "Users", map[string]interface{}{
+		"operation": "GetAdminByUserId",
+		"userId":    userId,
+	})
+
 	err := cli.Table("Users").Where("userId = ? AND isAdmin = 1", userId).First(&user).Error
 	if err != nil {
+		logger.LogQuery(nil, err)
 		return nil, fmt.Errorf("获取管理员信息失败: %v", err)
 	}
 
+	logger.LogQuery(&user, err)
 	return &user, nil
 }
 
@@ -42,11 +58,19 @@ func (a *AdminImp) GetAllAdmins(page, pageSize int) ([]*model.UserModel, int64, 
 	var total int64
 	cli := db.Get()
 
+	// 记录SQL操作日志
+	logger := NewSQLLogger("查询", "Users", map[string]interface{}{
+		"operation": "GetAllAdmins",
+		"page":      page,
+		"pageSize":  pageSize,
+	})
+
 	offset := (page - 1) * pageSize
 
 	// 获取总数
 	err := cli.Table("Users").Where("isAdmin = 1").Count(&total).Error
 	if err != nil {
+		logger.LogCount(total, err)
 		return nil, 0, fmt.Errorf("获取管理员总数失败: %v", err)
 	}
 
@@ -55,9 +79,11 @@ func (a *AdminImp) GetAllAdmins(page, pageSize int) ([]*model.UserModel, int64, 
 		Order("adminLevel DESC, adminCreatedAt DESC").
 		Offset(offset).Limit(pageSize).Find(&users).Error
 	if err != nil {
+		logger.LogQuery(users, err)
 		return nil, 0, fmt.Errorf("获取管理员列表失败: %v", err)
 	}
 
+	logger.LogQuery(users, err)
 	return users, total, nil
 }
 
@@ -65,6 +91,14 @@ func (a *AdminImp) GetAllAdmins(page, pageSize int) ([]*model.UserModel, int64, 
 func (a *AdminImp) SetUserAsAdmin(userId string, adminLevel int, parentAdminId string) error {
 	cli := db.Get()
 	now := time.Now()
+
+	// 记录SQL操作日志
+	logger := NewSQLLogger("更新", "Users", map[string]interface{}{
+		"operation":      "SetUserAsAdmin",
+		"userId":         userId,
+		"adminLevel":     adminLevel,
+		"parentAdminId":  parentAdminId,
+	})
 
 	updates := map[string]interface{}{
 		"isAdmin":        1,
@@ -76,9 +110,11 @@ func (a *AdminImp) SetUserAsAdmin(userId string, adminLevel int, parentAdminId s
 
 	err := cli.Table("Users").Where("userId = ?", userId).Updates(updates).Error
 	if err != nil {
+		logger.LogUpdate(updates, err)
 		return fmt.Errorf("设置用户为管理员失败: %v", err)
 	}
 
+	logger.LogUpdate(updates, err)
 	return nil
 }
 
@@ -86,6 +122,12 @@ func (a *AdminImp) SetUserAsAdmin(userId string, adminLevel int, parentAdminId s
 func (a *AdminImp) RemoveAdmin(userId string) error {
 	cli := db.Get()
 	now := time.Now()
+
+	// 记录SQL操作日志
+	logger := NewSQLLogger("更新", "Users", map[string]interface{}{
+		"operation": "RemoveAdmin",
+		"userId":   userId,
+	})
 
 	updates := map[string]interface{}{
 		"isAdmin":        0,
@@ -97,9 +139,11 @@ func (a *AdminImp) RemoveAdmin(userId string) error {
 
 	err := cli.Table("Users").Where("userId = ?", userId).Updates(updates).Error
 	if err != nil {
+		logger.LogUpdate(updates, err)
 		return fmt.Errorf("取消管理员权限失败: %v", err)
 	}
 
+	logger.LogUpdate(updates, err)
 	return nil
 }
 
@@ -229,7 +273,17 @@ func (a *AdminImp) GetVisibleOrders(adminUserId string, page, pageSize int) ([]*
 // LogAdminLogin 记录管理员登录日志
 func (a *AdminImp) LogAdminLogin(log *model.AdminLoginLogModel) error {
 	cli := db.Get()
-	return cli.Table("AdminLoginLogs").Create(log).Error
+
+	// 记录SQL操作日志
+	logger := NewSQLLogger("插入", "AdminLoginLogs", map[string]interface{}{
+		"operation":    "LogAdminLogin",
+		"adminUserId": log.AdminUserId,
+	})
+
+	err := cli.Table("AdminLoginLogs").Create(log).Error
+	logger.LogInsert(log, err)
+
+	return err
 }
 
 // GetAdminLoginLogs 获取管理员登录日志
