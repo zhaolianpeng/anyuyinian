@@ -10,7 +10,6 @@ import (
 	"strconv"
 	"time"
 
-	"wxcloudrun-golang/config"
 	"wxcloudrun-golang/db/dao"
 	"wxcloudrun-golang/db/model"
 )
@@ -901,19 +900,33 @@ func DecryptPhoneNumberHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	LogStep("用户验证成功", map[string]interface{}{
-		"userId":   user.UserId,
-		"nickName": user.NickName,
+		"userId":     user.UserId,
+		"nickName":   user.NickName,
+		"sessionKey": user.SessionKey[:10] + "...", // 只显示前10个字符
 	})
+
+	// 检查session_key是否存在
+	if user.SessionKey == "" {
+		LogError("用户session_key为空", fmt.Errorf("userId=%s, sessionKey为空", req.UserId))
+		response := &UserResponse{
+			Code:     -1,
+			ErrorMsg: "用户session_key不存在，请重新登录",
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(response)
+		return
+	}
 
 	// 使用微信解密算法解密手机号
 	LogStep("开始解密手机号", map[string]interface{}{
 		"userId":        req.UserId,
 		"encryptedData": req.EncryptedData[:20] + "...",
 		"iv":            req.IV,
+		"sessionKey":    user.SessionKey[:10] + "...",
 	})
 
-	// 调用微信解密算法
-	phoneNumber, err := decryptWechatPhoneNumber(req.EncryptedData, req.IV)
+	// 调用微信解密算法，使用session_key
+	phoneNumber, err := decryptWechatPhoneNumber(req.EncryptedData, req.IV, user.SessionKey)
 	if err != nil {
 		LogError("微信手机号解密失败", err)
 		response := &UserResponse{
@@ -946,10 +959,9 @@ func DecryptPhoneNumberHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // decryptWechatPhoneNumber 解密微信手机号
-func decryptWechatPhoneNumber(encryptedData, iv string) (string, error) {
-	// 获取微信配置
-	wxConfig := config.GetWxConfig()
-	appSecret := wxConfig.AppSecret
+func decryptWechatPhoneNumber(encryptedData, iv, sessionKey string) (string, error) {
+	// 使用session_key作为解密密钥
+	key := []byte(sessionKey)
 
 	// 解码Base64数据
 	encryptedBytes, err := base64.StdEncoding.DecodeString(encryptedData)
@@ -960,17 +972,6 @@ func decryptWechatPhoneNumber(encryptedData, iv string) (string, error) {
 	ivBytes, err := base64.StdEncoding.DecodeString(iv)
 	if err != nil {
 		return "", fmt.Errorf("解码IV失败: %v", err)
-	}
-
-	// 使用AppSecret作为密钥（需要截取前16字节）
-	key := []byte(appSecret)
-	if len(key) > 16 {
-		key = key[:16]
-	} else {
-		// 如果密钥长度不足16字节，用0填充
-		paddedKey := make([]byte, 16)
-		copy(paddedKey, key)
-		key = paddedKey
 	}
 
 	// 创建AES解密器
