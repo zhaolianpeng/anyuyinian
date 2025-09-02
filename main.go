@@ -43,6 +43,7 @@ func main() {
 	http.HandleFunc("/api/user/info", service.NewLogMiddleware(service.GetUserInfoHandler))
 	http.HandleFunc("/api/user/bind_phone", service.NewLogMiddleware(service.BindPhoneHandler))
 	http.HandleFunc("/api/user/update_info", service.NewLogMiddleware(service.UpdateUserInfoHandler))
+	http.HandleFunc("/api/user/decrypt_phone", service.NewLogMiddleware(service.DecryptPhoneNumberHandler))
 	http.HandleFunc("/api/user/address", service.NewLogMiddleware(service.AddressHandler))
 	http.HandleFunc("/api/user/patient", service.NewLogMiddleware(service.PatientHandler))
 

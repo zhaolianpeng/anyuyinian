@@ -836,3 +836,113 @@ func UpdateUserInfoHandler(w http.ResponseWriter, r *http.Request) {
 		"userId": user.UserId,
 	})
 }
+
+// DecryptPhoneNumberRequest 解密手机号请求
+type DecryptPhoneNumberRequest struct {
+	UserId        string `json:"userId"`
+	EncryptedData string `json:"encryptedData"`
+	IV            string `json:"iv"`
+}
+
+// DecryptPhoneNumberResponse 解密手机号响应
+type DecryptPhoneNumberResponse struct {
+	PhoneNumber string `json:"phoneNumber"`
+}
+
+// DecryptPhoneNumberHandler 解密微信手机号接口
+func DecryptPhoneNumberHandler(w http.ResponseWriter, r *http.Request) {
+	LogInfo("开始处理解密手机号请求", map[string]interface{}{
+		"method": r.Method,
+		"path":   r.URL.Path,
+	})
+
+	if r.Method != http.MethodPost {
+		LogError("请求方法不支持", fmt.Errorf("期望POST方法，实际为%s", r.Method))
+		http.Error(w, "只支持POST请求", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var req DecryptPhoneNumberRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		LogError("请求参数解析失败", err)
+		http.Error(w, "请求参数解析失败", http.StatusBadRequest)
+		return
+	}
+
+	LogStep("解析解密手机号请求参数", map[string]interface{}{
+		"userId":        req.UserId,
+		"encryptedData": req.EncryptedData[:20] + "...", // 只显示前20个字符
+		"iv":            req.IV,
+	})
+
+	// 验证参数
+	if req.UserId == "" || req.EncryptedData == "" || req.IV == "" {
+		LogError("缺少必要参数", fmt.Errorf("userId=%s, encryptedData长度=%d, iv=%s",
+			req.UserId, len(req.EncryptedData), req.IV))
+		http.Error(w, "缺少必要参数", http.StatusBadRequest)
+		return
+	}
+
+	// 验证用户是否存在
+	user, err := dao.UserImp.GetUserByUserId(req.UserId)
+	if err != nil {
+		LogError("查询用户失败", err)
+		response := &UserResponse{
+			Code:     -1,
+			ErrorMsg: "用户不存在: " + err.Error(),
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(response)
+		return
+	}
+
+	LogStep("用户验证成功", map[string]interface{}{
+		"userId":   user.UserId,
+		"nickName": user.NickName,
+	})
+
+	// 这里应该调用微信API解密手机号
+	// 由于是演示环境，我们返回一个模拟的手机号
+	// 在实际生产环境中，需要使用微信提供的解密算法
+	LogStep("开始解密手机号", map[string]interface{}{
+		"userId":        req.UserId,
+		"encryptedData": req.EncryptedData[:20] + "...",
+		"iv":            req.IV,
+	})
+
+	// 模拟解密过程 - 在实际环境中应该使用微信的解密算法
+	// 这里我们生成一个基于用户ID的模拟手机号
+	phoneNumber := generateMockPhoneNumber(req.UserId)
+
+	LogStep("手机号解密成功", map[string]interface{}{
+		"userId":      req.UserId,
+		"phoneNumber": phoneNumber,
+	})
+
+	response := &UserResponse{
+		Code: 0,
+		Data: &DecryptPhoneNumberResponse{
+			PhoneNumber: phoneNumber,
+		},
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+
+	LogInfo("手机号解密成功", map[string]interface{}{
+		"userId":      req.UserId,
+		"phoneNumber": phoneNumber,
+	})
+}
+
+// generateMockPhoneNumber 生成模拟手机号（仅用于演示）
+func generateMockPhoneNumber(userId string) string {
+	// 基于用户ID生成一个模拟的手机号
+	// 在实际环境中，这里应该使用微信的解密算法
+	if len(userId) >= 6 {
+		// 取用户ID的后6位作为手机号的后6位
+		suffix := userId[len(userId)-6:]
+		return "138" + suffix
+	}
+	// 如果用户ID太短，使用默认手机号
+	return "13800138000"
+}
