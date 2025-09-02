@@ -12,7 +12,15 @@ const userTableName = "Users"
 func (imp *UserInterfaceImp) GetUserByOpenId(openId string) (*model.UserModel, error) {
 	var user = new(model.UserModel)
 	cli := db.Get()
+
+	// 记录SQL操作日志
+	logger := NewSQLLogger("查询", userTableName, map[string]interface{}{
+		"openId": openId,
+	})
+
 	err := cli.Table(userTableName).Where("openId = ?", openId).First(user).Error
+	logger.LogQuery(user, err)
+
 	return user, err
 }
 

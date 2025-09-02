@@ -12,7 +12,16 @@ const serviceTableName = "ServiceItems"
 func (imp *ServiceInterfaceImp) GetServiceById(id int32) (*model.ServiceItemModel, error) {
 	var service = new(model.ServiceItemModel)
 	cli := db.Get()
+
+	// 记录SQL操作日志
+	logger := NewSQLLogger("查询", serviceTableName, map[string]interface{}{
+		"id":     id,
+		"status": 1,
+	})
+
 	err := cli.Table(serviceTableName).Where("id = ? AND status = ?", id, 1).First(service).Error
+	logger.LogQuery(service, err)
+
 	return service, err
 }
 
@@ -22,11 +31,21 @@ func (imp *ServiceInterfaceImp) GetServicesByCategory(category string, page, pag
 	var total int64
 	cli := db.Get()
 
+	// 记录SQL操作日志
+	logger := NewSQLLogger("查询", serviceTableName, map[string]interface{}{
+		"category": category,
+		"page":     page,
+		"pageSize": pageSize,
+		"status":   1,
+	})
+
 	// 获取总数
 	err := cli.Table(serviceTableName).Where("category = ? AND status = ?", category, 1).Count(&total).Error
 	if err != nil {
+		logger.LogCount(0, err)
 		return nil, 0, err
 	}
+	logger.LogCount(total, nil)
 
 	// 获取分页数据
 	offset := (page - 1) * pageSize
@@ -37,6 +56,7 @@ func (imp *ServiceInterfaceImp) GetServicesByCategory(category string, page, pag
 		Limit(pageSize).
 		Find(&services).Error
 
+	logger.LogQuery(services, err)
 	return services, total, err
 }
 
@@ -46,11 +66,20 @@ func (imp *ServiceInterfaceImp) GetAllServices(page, pageSize int) ([]*model.Ser
 	var total int64
 	cli := db.Get()
 
+	// 记录SQL操作日志
+	logger := NewSQLLogger("查询", serviceTableName, map[string]interface{}{
+		"page":     page,
+		"pageSize": pageSize,
+		"status":   1,
+	})
+
 	// 获取总数
 	err := cli.Table(serviceTableName).Where("status = ?", 1).Count(&total).Error
 	if err != nil {
+		logger.LogCount(0, err)
 		return nil, 0, err
 	}
+	logger.LogCount(total, nil)
 
 	// 获取分页数据
 	offset := (page - 1) * pageSize
@@ -61,6 +90,7 @@ func (imp *ServiceInterfaceImp) GetAllServices(page, pageSize int) ([]*model.Ser
 		Limit(pageSize).
 		Find(&services).Error
 
+	logger.LogQuery(services, err)
 	return services, total, err
 }
 
@@ -75,10 +105,19 @@ type CategoryCount struct {
 func (imp *ServiceInterfaceImp) GetServiceCategories() ([]string, error) {
 	var categories []string
 	cli := db.Get()
+
+	// 记录SQL操作日志
+	logger := NewSQLLogger("查询", serviceTableName, map[string]interface{}{
+		"status": 1,
+		"field":  "category",
+	})
+
 	err := cli.Table(serviceTableName).
 		Where("status = ?", 1).
 		Distinct("category").
 		Pluck("category", &categories).Error
+
+	logger.LogQuery(categories, err)
 	return categories, err
 }
 
@@ -86,6 +125,12 @@ func (imp *ServiceInterfaceImp) GetServiceCategories() ([]string, error) {
 func (imp *ServiceInterfaceImp) GetServiceCategoriesWithCount() ([]CategoryCount, error) {
 	var categories []CategoryCount
 	cli := db.Get()
+
+	// 记录SQL操作日志
+	logger := NewSQLLogger("查询", serviceTableName, map[string]interface{}{
+		"status": 1,
+		"group":  "category",
+	})
 
 	// 查询每个分类的服务数量
 	err := cli.Table(serviceTableName).
@@ -96,8 +141,11 @@ func (imp *ServiceInterfaceImp) GetServiceCategoriesWithCount() ([]CategoryCount
 		Scan(&categories).Error
 
 	if err != nil {
+		logger.LogQuery(nil, err)
 		return nil, err
 	}
+
+	logger.LogQuery(categories, nil)
 
 	// 为每个分类设置显示名称
 	for i := range categories {
@@ -127,18 +175,50 @@ func (imp *ServiceInterfaceImp) CreateService(service *model.ServiceItemModel) e
 	cli := db.Get()
 	service.CreatedAt = time.Now()
 	service.UpdatedAt = time.Now()
-	return cli.Table(serviceTableName).Create(service).Error
+
+	// 记录SQL操作日志
+	logger := NewSQLLogger("插入", serviceTableName, map[string]interface{}{
+		"name":     service.Name,
+		"category": service.Category,
+		"price":    service.Price,
+	})
+
+	err := cli.Table(serviceTableName).Create(service).Error
+	logger.LogInsert(service, err)
+
+	return err
 }
 
 // UpdateService 更新服务
 func (imp *ServiceInterfaceImp) UpdateService(service *model.ServiceItemModel) error {
 	cli := db.Get()
 	service.UpdatedAt = time.Now()
-	return cli.Table(serviceTableName).Where("id = ?", service.Id).Updates(service).Error
+
+	// 记录SQL操作日志
+	logger := NewSQLLogger("更新", serviceTableName, map[string]interface{}{
+		"id":       service.Id,
+		"name":     service.Name,
+		"category": service.Category,
+	})
+
+	result := cli.Table(serviceTableName).Where("id = ?", service.Id).Updates(service)
+	logger.LogUpdate(result.RowsAffected, result.Error)
+
+	return result.Error
 }
 
 // DeleteService 删除服务（软删除）
 func (imp *ServiceInterfaceImp) DeleteService(id int32) error {
 	cli := db.Get()
-	return cli.Table(serviceTableName).Where("id = ?", id).Update("status", 0).Error
+
+	// 记录SQL操作日志
+	logger := NewSQLLogger("删除", serviceTableName, map[string]interface{}{
+		"id":     id,
+		"status": 0,
+	})
+
+	result := cli.Table(serviceTableName).Where("id = ?", id).Update("status", 0)
+	logger.LogDelete(result.RowsAffected, result.Error)
+
+	return result.Error
 }

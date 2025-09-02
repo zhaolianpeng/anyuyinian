@@ -13,7 +13,18 @@ func (imp *OrderInterfaceImp) CreateOrder(order *model.OrderModel) error {
 	cli := db.Get()
 	order.CreatedAt = time.Now()
 	order.UpdatedAt = time.Now()
-	return cli.Table(orderTableName).Create(order).Error
+
+	// 记录SQL操作日志
+	logger := NewSQLLogger("插入", orderTableName, map[string]interface{}{
+		"orderNo": order.OrderNo,
+		"userId":  order.UserId,
+		"status":  order.Status,
+	})
+
+	err := cli.Table(orderTableName).Create(order).Error
+	logger.LogInsert(order, err)
+
+	return err
 }
 
 // GetOrderById 根据ID获取订单
