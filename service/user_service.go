@@ -960,9 +960,6 @@ func DecryptPhoneNumberHandler(w http.ResponseWriter, r *http.Request) {
 
 // decryptWechatPhoneNumber 解密微信手机号
 func decryptWechatPhoneNumber(encryptedData, iv, sessionKey string) (string, error) {
-	// 使用session_key作为解密密钥
-	key := []byte(sessionKey)
-
 	// 解码Base64数据
 	encryptedBytes, err := base64.StdEncoding.DecodeString(encryptedData)
 	if err != nil {
@@ -974,10 +971,21 @@ func decryptWechatPhoneNumber(encryptedData, iv, sessionKey string) (string, err
 		return "", fmt.Errorf("解码IV失败: %v", err)
 	}
 
+	// 解码session_key
+	key, err := base64.StdEncoding.DecodeString(sessionKey)
+	if err != nil {
+		return "", fmt.Errorf("解码session_key失败: %v", err)
+	}
+
 	// 创建AES解密器
 	block, err := aes.NewCipher(key)
 	if err != nil {
 		return "", fmt.Errorf("创建AES解密器失败: %v", err)
+	}
+
+	// 检查数据长度
+	if len(encryptedBytes)%aes.BlockSize != 0 {
+		return "", fmt.Errorf("加密数据长度不是AES块大小的倍数")
 	}
 
 	// 创建CBC模式解密器
