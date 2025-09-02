@@ -1,12 +1,16 @@
 package service
 
 import (
+	"crypto/aes"
+	"crypto/cipher"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
 	"time"
 
+	"wxcloudrun-golang/config"
 	"wxcloudrun-golang/db/dao"
 	"wxcloudrun-golang/db/model"
 )
@@ -901,18 +905,25 @@ func DecryptPhoneNumberHandler(w http.ResponseWriter, r *http.Request) {
 		"nickName": user.NickName,
 	})
 
-	// 这里应该调用微信API解密手机号
-	// 由于是演示环境，我们返回一个模拟的手机号
-	// 在实际生产环境中，需要使用微信提供的解密算法
+	// 使用微信解密算法解密手机号
 	LogStep("开始解密手机号", map[string]interface{}{
 		"userId":        req.UserId,
 		"encryptedData": req.EncryptedData[:20] + "...",
 		"iv":            req.IV,
 	})
 
-	// 模拟解密过程 - 在实际环境中应该使用微信的解密算法
-	// 这里我们生成一个基于用户ID的模拟手机号
-	phoneNumber := generateMockPhoneNumber(req.UserId)
+	// 调用微信解密算法
+	phoneNumber, err := decryptWechatPhoneNumber(req.EncryptedData, req.IV)
+	if err != nil {
+		LogError("微信手机号解密失败", err)
+		response := &UserResponse{
+			Code:     -1,
+			ErrorMsg: "手机号解密失败: " + err.Error(),
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(response)
+		return
+	}
 
 	LogStep("手机号解密成功", map[string]interface{}{
 		"userId":      req.UserId,
@@ -934,15 +945,85 @@ func DecryptPhoneNumberHandler(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// generateMockPhoneNumber 生成模拟手机号（仅用于演示）
-func generateMockPhoneNumber(userId string) string {
-	// 基于用户ID生成一个模拟的手机号
-	// 在实际环境中，这里应该使用微信的解密算法
-	if len(userId) >= 6 {
-		// 取用户ID的后6位作为手机号的后6位
-		suffix := userId[len(userId)-6:]
-		return "138" + suffix
+// decryptWechatPhoneNumber 解密微信手机号
+func decryptWechatPhoneNumber(encryptedData, iv string) (string, error) {
+	// 获取微信配置
+	wxConfig := config.GetWxConfig()
+	appSecret := wxConfig.AppSecret
+
+	// 解码Base64数据
+	encryptedBytes, err := base64.StdEncoding.DecodeString(encryptedData)
+	if err != nil {
+		return "", fmt.Errorf("解码加密数据失败: %v", err)
 	}
-	// 如果用户ID太短，使用默认手机号
-	return "13800138000"
+
+	ivBytes, err := base64.StdEncoding.DecodeString(iv)
+	if err != nil {
+		return "", fmt.Errorf("解码IV失败: %v", err)
+	}
+
+	// 使用AppSecret作为密钥（需要截取前16字节）
+	key := []byte(appSecret)
+	if len(key) > 16 {
+		key = key[:16]
+	} else {
+		// 如果密钥长度不足16字节，用0填充
+		paddedKey := make([]byte, 16)
+		copy(paddedKey, key)
+		key = paddedKey
+	}
+
+	// 创建AES解密器
+	block, err := aes.NewCipher(key)
+	if err != nil {
+		return "", fmt.Errorf("创建AES解密器失败: %v", err)
+	}
+
+	// 创建CBC模式解密器
+	mode := cipher.NewCBCDecrypter(block, ivBytes)
+
+	// 解密数据
+	decrypted := make([]byte, len(encryptedBytes))
+	mode.CryptBlocks(decrypted, encryptedBytes)
+
+	// 去除PKCS7填充
+	decrypted = removePKCS7Padding(decrypted)
+
+	// 解析JSON数据
+	var phoneData struct {
+		PhoneNumber     string `json:"phoneNumber"`
+		PurePhoneNumber string `json:"purePhoneNumber"`
+		CountryCode     string `json:"countryCode"`
+	}
+
+	if err := json.Unmarshal(decrypted, &phoneData); err != nil {
+		return "", fmt.Errorf("解析解密数据失败: %v", err)
+	}
+
+	// 返回手机号（优先使用purePhoneNumber）
+	if phoneData.PurePhoneNumber != "" {
+		return phoneData.PurePhoneNumber, nil
+	}
+	return phoneData.PhoneNumber, nil
+}
+
+// removePKCS7Padding 移除PKCS7填充
+func removePKCS7Padding(data []byte) []byte {
+	if len(data) == 0 {
+		return data
+	}
+
+	padding := int(data[len(data)-1])
+	if padding > len(data) || padding == 0 {
+		return data
+	}
+
+	// 验证填充是否正确
+	for i := len(data) - padding; i < len(data); i++ {
+		if data[i] != byte(padding) {
+			return data
+		}
+	}
+
+	return data[:len(data)-padding]
 }
