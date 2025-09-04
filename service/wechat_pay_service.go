@@ -63,8 +63,20 @@ func GenerateWechatPayParams(order *model.OrderModel, openID string) (map[string
 	// 验证配置
 	if wechatConfig.MchID == "" || wechatConfig.MchKey == "" {
 		LogError("微信支付配置不完整", fmt.Errorf("商户号或商户密钥未配置"))
-		return nil, fmt.Errorf("微信支付配置不完整")
+		return nil, fmt.Errorf("微信支付配置不完整: 商户号=%s, 商户密钥=%s", wechatConfig.MchID, wechatConfig.MchKey)
 	}
+
+	// 验证商户号格式
+	if len(wechatConfig.MchID) != 10 {
+		LogError("商户号格式错误", fmt.Errorf("商户号长度应为10位，当前为%d位", len(wechatConfig.MchID)))
+		return nil, fmt.Errorf("商户号格式错误")
+	}
+
+	LogStep("微信支付配置验证通过", map[string]interface{}{
+		"mchID":       wechatConfig.MchID,
+		"appID":       wechatConfig.AppID,
+		"environment": wechatConfig.Environment,
+	})
 
 	// 生成随机字符串
 	nonceStr := generateNonceStr()

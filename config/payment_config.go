@@ -25,12 +25,12 @@ func GetPaymentConfig() *PaymentConfig {
 	return &PaymentConfig{
 		WechatPay: WechatPayConfig{
 			AppID:       getPaymentEnv("WECHAT_PAY_APP_ID", "wx101090677bd5219e"),
-			MchID:       getPaymentEnv("WECHAT_PAY_MCH_ID", ""),
-			MchKey:      getPaymentEnv("WECHAT_PAY_MCH_KEY", ""),
+			MchID:       getPaymentEnv("WECHAT_PAY_MCH_ID", "1726638701"),                        // 您的商户号
+			MchKey:      getPaymentEnv("WECHAT_PAY_MCH_KEY", "JQzOCB8doIdgaUjAobELsk9nTyxdKhat"), // 需要设置商户密钥
 			NotifyURL:   getPaymentEnv("WECHAT_PAY_NOTIFY_URL", "https://your-domain.com/api/payment/notify"),
 			CertPath:    getPaymentEnv("WECHAT_PAY_CERT_PATH", ""),
 			KeyPath:     getPaymentEnv("WECHAT_PAY_KEY_PATH", ""),
-			Environment: getPaymentEnv("WECHAT_PAY_ENVIRONMENT", "sandbox"),
+			Environment: getPaymentEnv("WECHAT_PAY_ENVIRONMENT", "production"), // 改为生产环境
 		},
 	}
 }
