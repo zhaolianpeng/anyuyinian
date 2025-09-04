@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"wxcloudrun-golang/config"
+	"wxcloudrun-golang/db/dao"
 	"wxcloudrun-golang/db/model"
 )
 
@@ -337,8 +338,42 @@ func HandleWechatPayNotify(w http.ResponseWriter, r *http.Request) {
 		"totalFee":      totalFee,
 	})
 
-	// TODO: 更新订单状态
-	// 这里应该调用订单服务更新订单状态为已支付
+	// 更新订单状态为已支付
+	orderDAO := &dao.OrderInterfaceImp{}
+	order, err := orderDAO.GetOrderByOrderNo(orderNo)
+	if err != nil {
+		LogError("获取订单失败", err)
+		// 即使获取订单失败，也要返回成功给微信
+		response := &WechatPayNotifyResponse{
+			ReturnCode: "SUCCESS",
+			ReturnMsg:  "OK",
+		}
+		w.Header().Set("Content-Type", "application/xml")
+		xml.NewEncoder(w).Encode(response)
+		return
+	}
+
+	// 更新订单状态
+	order.Status = 1 // 1表示已支付
+	order.TransactionId = transactionId
+	order.UpdatedAt = time.Now()
+
+	if err := orderDAO.UpdateOrder(order); err != nil {
+		LogError("更新订单状态失败", err)
+		// 即使更新失败，也要返回成功给微信
+		response := &WechatPayNotifyResponse{
+			ReturnCode: "SUCCESS",
+			ReturnMsg:  "OK",
+		}
+		w.Header().Set("Content-Type", "application/xml")
+		xml.NewEncoder(w).Encode(response)
+		return
+	}
+
+	LogStep("订单状态更新成功", map[string]interface{}{
+		"orderId": order.Id,
+		"status":  order.Status,
+	})
 
 	// 返回成功响应给微信
 	response := &WechatPayNotifyResponse{

@@ -162,10 +162,10 @@ func (imp *OrderInterfaceImp) UpdateRefundStatus(id int32, refundStatus int, ref
 
 	// 记录SQL操作日志
 	logger := NewSQLLogger("更新", orderTableName, map[string]interface{}{
-		"id":            id,
-		"refundStatus":  refundStatus,
-		"refundAmount":  refundAmount,
-		"refundReason":  refundReason,
+		"id":           id,
+		"refundStatus": refundStatus,
+		"refundAmount": refundAmount,
+		"refundReason": refundReason,
 	})
 
 	updates := map[string]interface{}{
