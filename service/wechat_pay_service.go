@@ -177,13 +177,13 @@ func callWechatPayUnifiedOrder(request *WechatPayRequest) (*WechatPayResponse, e
 		"url":  apiURL,
 		"data": string(xmlData),
 		"request": map[string]interface{}{
-			"appID":          request.AppID,
-			"mchID":          request.MchID,
-			"outTradeNo":     request.OutTradeNo,
-			"totalFee":       request.TotalFee,
-			"tradeType":      request.TradeType,
-			"openID":         request.OpenID,
-			"notifyURL":      request.NotifyURL,
+			"appID":      request.AppID,
+			"mchID":      request.MchID,
+			"outTradeNo": request.OutTradeNo,
+			"totalFee":   request.TotalFee,
+			"tradeType":  request.TradeType,
+			"openID":     request.OpenID,
+			"notifyURL":  request.NotifyURL,
 		},
 	})
 
@@ -319,7 +319,7 @@ func generateMockPayParams() map[string]interface{} {
 	nonceStr := generateNonceStr()
 	packageStr := "prepay_id=mock_prepay_id_123456"
 	signType := "MD5"
-	
+
 	// 生成模拟签名
 	paySign := "MOCK_SIGN_" + nonceStr
 
