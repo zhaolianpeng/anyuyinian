@@ -1267,18 +1267,18 @@ func GetAvailableTimeSlotsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 验证日期范围（明天开始，未来7天）
-	tomorrow := time.Now().AddDate(0, 0, 1)
-	tomorrow = time.Date(tomorrow.Year(), tomorrow.Month(), tomorrow.Day(), 0, 0, 0, 0, tomorrow.Location())
+	// 验证日期范围（今天开始，未来7天）
+	today := time.Now()
+	today = time.Date(today.Year(), today.Month(), today.Day(), 0, 0, 0, 0, today.Location())
 
-	maxDate := time.Now().AddDate(0, 0, 7)
+	maxDate := time.Now().AddDate(0, 0, 6) // 今天+6天，共7天
 	maxDate = time.Date(maxDate.Year(), maxDate.Month(), maxDate.Day(), 23, 59, 59, 0, maxDate.Location())
 
 	requestDateTime := time.Date(requestDate.Year(), requestDate.Month(), requestDate.Day(), 0, 0, 0, 0, requestDate.Location())
 
-	if requestDateTime.Before(tomorrow) {
-		LogError("请求日期过早", fmt.Errorf("requestDate=%v, tomorrow=%v", requestDateTime, tomorrow))
-		http.Error(w, "只能查询明天开始的日期", http.StatusBadRequest)
+	if requestDateTime.Before(today) {
+		LogError("请求日期过早", fmt.Errorf("requestDate=%v, today=%v", requestDateTime, today))
+		http.Error(w, "只能查询今天开始的日期", http.StatusBadRequest)
 		return
 	}
 
