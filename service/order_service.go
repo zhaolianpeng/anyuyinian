@@ -424,6 +424,11 @@ func PayOrderHandler(w http.ResponseWriter, r *http.Request) {
 
 // PayConfirmHandler 支付确认接口
 func PayConfirmHandler(w http.ResponseWriter, r *http.Request) {
+	LogStep("支付确认接口被调用", map[string]interface{}{
+		"method": r.Method,
+		"path":   r.URL.Path,
+	})
+	
 	if r.Method != http.MethodPost {
 		http.Error(w, "只支持POST请求", http.StatusMethodNotAllowed)
 		return
@@ -437,8 +442,14 @@ func PayConfirmHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	orderIdStr := pathParts[4] // 修复：使用索引4而不是3
+	LogStep("解析订单ID", map[string]interface{}{
+		"pathParts": pathParts,
+		"orderIdStr": orderIdStr,
+	})
+	
 	orderId, err := strconv.Atoi(orderIdStr)
 	if err != nil {
+		LogError("无效的订单ID", err)
 		http.Error(w, "无效的订单ID", http.StatusBadRequest)
 		return
 	}
@@ -448,9 +459,16 @@ func PayConfirmHandler(w http.ResponseWriter, r *http.Request) {
 		PayMethod     string `json:"payMethod"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		LogError("请求参数解析失败", err)
 		http.Error(w, "请求参数解析失败", http.StatusBadRequest)
 		return
 	}
+	
+	LogStep("支付确认请求参数", map[string]interface{}{
+		"orderId": orderId,
+		"transactionId": req.TransactionId,
+		"payMethod": req.PayMethod,
+	})
 
 	// 获取订单信息
 	order, err := dao.OrderImp.GetOrderById(int32(orderId))
