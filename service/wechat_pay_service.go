@@ -144,7 +144,7 @@ func GenerateWechatPayParams(order *model.OrderModel, openID string) (map[string
 
 	if response.ResultCode != "SUCCESS" {
 		LogError("微信支付业务失败", fmt.Errorf("result_code: %s, err_code: %s, err_code_des: %s", response.ResultCode, response.ErrCode, response.ErrCodeDes))
-		
+
 		// 根据错误代码返回更友好的错误信息
 		var friendlyError string
 		switch response.ErrCode {
@@ -159,7 +159,7 @@ func GenerateWechatPayParams(order *model.OrderModel, openID string) (map[string
 		default:
 			friendlyError = fmt.Sprintf("支付失败: %s", response.ErrCodeDes)
 		}
-		
+
 		return nil, fmt.Errorf(friendlyError)
 	}
 
