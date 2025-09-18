@@ -30,7 +30,7 @@ func GetPaymentConfig() *PaymentConfig {
 			NotifyURL:   getPaymentEnv("WECHAT_PAY_NOTIFY_URL", "https://golang-lfwy-176496-6-1353115175.sh.run.tcloudbase.com/api/payment/notify"),
 			CertPath:    getPaymentEnv("WECHAT_PAY_CERT_PATH", ""),
 			KeyPath:     getPaymentEnv("WECHAT_PAY_KEY_PATH", ""),
-			Environment: getPaymentEnv("WECHAT_PAY_ENVIRONMENT", "production"), // 改为生产环境
+			Environment: getPaymentEnv("WECHAT_PAY_ENVIRONMENT", "production"), // 生产环境
 		},
 	}
 }

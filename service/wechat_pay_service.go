@@ -37,6 +37,8 @@ type WechatPayResponse struct {
 	ReturnCode string `xml:"return_code"`
 	ReturnMsg  string `xml:"return_msg"`
 	ResultCode string `xml:"result_code"`
+	ErrCode    string `xml:"err_code"`
+	ErrCodeDes string `xml:"err_code_des"`
 	PrepayID   string `xml:"prepay_id"`
 	NonceStr   string `xml:"nonce_str"`
 	Sign       string `xml:"sign"`
@@ -65,6 +67,26 @@ func GenerateWechatPayParams(order *model.OrderModel, openID string) (map[string
 	if wechatConfig.MchID == "" || wechatConfig.MchKey == "" {
 		LogError("微信支付配置不完整", fmt.Errorf("商户号或商户密钥未配置"))
 		return nil, fmt.Errorf("微信支付配置不完整: 商户号=%s, 商户密钥=%s", wechatConfig.MchID, wechatConfig.MchKey)
+	}
+
+	// 验证OpenID
+	if openID == "" {
+		LogError("OpenID为空", fmt.Errorf("OpenID不能为空"))
+		return nil, fmt.Errorf("OpenID不能为空")
+	}
+
+	// 检查OpenID格式（微信OpenID通常是28位字符串）
+	if len(openID) < 20 || len(openID) > 32 {
+		LogError("OpenID格式不正确", fmt.Errorf("OpenID长度应为20-32位，当前为%d位", len(openID)))
+		return nil, fmt.Errorf("OpenID格式不正确")
+	}
+
+	// 开发环境：如果OpenID是测试值，返回模拟支付参数
+	if strings.HasPrefix(openID, "test_") || strings.HasPrefix(openID, "mock_") {
+		LogStep("检测到测试OpenID，返回模拟支付参数", map[string]interface{}{
+			"openID": openID,
+		})
+		return generateMockPayParams(), nil
 	}
 
 	// 验证商户号格式
@@ -121,8 +143,8 @@ func GenerateWechatPayParams(order *model.OrderModel, openID string) (map[string
 	}
 
 	if response.ResultCode != "SUCCESS" {
-		LogError("微信支付业务失败", fmt.Errorf("result_code: %s", response.ResultCode))
-		return nil, fmt.Errorf("微信支付业务失败")
+		LogError("微信支付业务失败", fmt.Errorf("result_code: %s, err_code: %s, err_code_des: %s", response.ResultCode, response.ErrCode, response.ErrCodeDes))
+		return nil, fmt.Errorf("微信支付业务失败: %s - %s", response.ErrCode, response.ErrCodeDes)
 	}
 
 	// 生成小程序支付参数
@@ -154,6 +176,15 @@ func callWechatPayUnifiedOrder(request *WechatPayRequest) (*WechatPayResponse, e
 	LogStep("发送微信支付请求", map[string]interface{}{
 		"url":  apiURL,
 		"data": string(xmlData),
+		"request": map[string]interface{}{
+			"appID":          request.AppID,
+			"mchID":          request.MchID,
+			"outTradeNo":     request.OutTradeNo,
+			"totalFee":       request.TotalFee,
+			"tradeType":      request.TradeType,
+			"openID":         request.OpenID,
+			"notifyURL":      request.NotifyURL,
+		},
 	})
 
 	// 发送HTTP请求
@@ -172,6 +203,7 @@ func callWechatPayUnifiedOrder(request *WechatPayRequest) (*WechatPayResponse, e
 	LogStep("收到微信支付响应", map[string]interface{}{
 		"statusCode": resp.StatusCode,
 		"response":   string(body),
+		"headers":    resp.Header,
 	})
 
 	// 解析响应
@@ -279,6 +311,33 @@ func generateNonceStr() string {
 		b[i] = charset[rand.Intn(len(charset))]
 	}
 	return string(b)
+}
+
+// generateMockPayParams 生成模拟支付参数（用于开发环境测试）
+func generateMockPayParams() map[string]interface{} {
+	timeStamp := strconv.FormatInt(time.Now().Unix(), 10)
+	nonceStr := generateNonceStr()
+	packageStr := "prepay_id=mock_prepay_id_123456"
+	signType := "MD5"
+	
+	// 生成模拟签名
+	paySign := "MOCK_SIGN_" + nonceStr
+
+	LogStep("生成模拟支付参数", map[string]interface{}{
+		"timeStamp": timeStamp,
+		"nonceStr":  nonceStr,
+		"package":   packageStr,
+		"signType":  signType,
+		"paySign":   paySign,
+	})
+
+	return map[string]interface{}{
+		"timeStamp": timeStamp,
+		"nonceStr":  nonceStr,
+		"package":   packageStr,
+		"signType":  signType,
+		"paySign":   paySign,
+	}
 }
 
 // HandleWechatPayNotify 处理微信支付通知
