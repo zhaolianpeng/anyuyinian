@@ -1319,3 +1319,88 @@ func GetAvailableTimeSlotsHandler(w http.ResponseWriter, r *http.Request) {
 		"timeSlots": allowedTimeSlots,
 	})
 }
+
+// OrderDetailByIdHandler 通过订单ID获取订单详情接口
+func OrderDetailByIdHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "只支持GET请求", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// 从URL路径中获取订单ID
+	pathParts := strings.Split(r.URL.Path, "/")
+	if len(pathParts) < 4 {
+		http.Error(w, "缺少订单ID参数", http.StatusBadRequest)
+		return
+	}
+
+	orderIdStr := pathParts[3]
+	orderId, err := strconv.Atoi(orderIdStr)
+	if err != nil {
+		http.Error(w, "无效的订单ID", http.StatusBadRequest)
+		return
+	}
+
+	LogStep("通过订单ID获取订单详情", map[string]interface{}{
+		"orderId": orderId,
+	})
+
+	// 获取订单信息
+	order, err := dao.OrderImp.GetOrderById(int32(orderId))
+	if err != nil {
+		LogError("获取订单信息失败", err)
+		response := &OrderResponse{
+			Code:     -1,
+			ErrorMsg: "获取订单信息失败: " + err.Error(),
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(response)
+		return
+	}
+
+	// 构建响应数据
+	orderDetail := &OrderDetailResponse{
+		OrderModel: order,
+	}
+
+	// 获取患者信息
+	if order.PatientId != nil && *order.PatientId > 0 {
+		patient, err := dao.UserExtendImp.GetPatientById(*order.PatientId)
+		if err == nil && patient != nil {
+			orderDetail.PatientName = patient.Name
+			orderDetail.PatientPhone = patient.Phone
+		}
+	}
+
+	// 获取地址信息
+	if order.AddressId > 0 {
+		address, err := dao.UserExtendImp.GetAddressById(order.AddressId)
+		if err == nil && address != nil {
+			orderDetail.AddressInfo = address.Address
+		}
+	}
+
+	// 获取服务信息
+	if order.ServiceId > 0 {
+		service, err := dao.ServiceImp.GetServiceById(order.ServiceId)
+		if err == nil && service != nil {
+			orderDetail.ServiceTitle = service.Name
+		}
+	}
+
+	// 格式化价格
+	orderDetail.FormattedPrice = fmt.Sprintf("¥%.2f", float64(order.TotalAmount)/100)
+
+	response := &OrderResponse{
+		Code: 0,
+		Data: orderDetail,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+
+	LogInfo("通过订单ID获取订单详情成功", map[string]interface{}{
+		"orderId": orderId,
+		"orderNo": order.OrderNo,
+	})
+}
