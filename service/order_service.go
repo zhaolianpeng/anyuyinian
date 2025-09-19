@@ -1334,7 +1334,7 @@ func OrderDetailByIdHandler(w http.ResponseWriter, r *http.Request) {
 		"pathParts": pathParts,
 		"length":    len(pathParts),
 	})
-	
+
 	if len(pathParts) < 5 {
 		http.Error(w, "缺少订单ID参数", http.StatusBadRequest)
 		return
@@ -1344,7 +1344,7 @@ func OrderDetailByIdHandler(w http.ResponseWriter, r *http.Request) {
 	LogStep("提取订单ID字符串", map[string]interface{}{
 		"orderIdStr": orderIdStr,
 	})
-	
+
 	orderId, err := strconv.Atoi(orderIdStr)
 	if err != nil {
 		LogError("订单ID转换失败", err)
