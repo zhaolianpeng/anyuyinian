@@ -925,9 +925,11 @@ func getOrderStatusText(status int) string {
 	case 1:
 		return "已支付"
 	case 2:
-		return "已取消"
-	case 3:
 		return "已完成"
+	case 3:
+		return "已取消"
+	case 4:
+		return "已退款"
 	default:
 		return "未知"
 	}
