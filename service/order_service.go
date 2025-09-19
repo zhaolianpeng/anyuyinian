@@ -1329,14 +1329,25 @@ func OrderDetailByIdHandler(w http.ResponseWriter, r *http.Request) {
 
 	// 从URL路径中获取订单ID
 	pathParts := strings.Split(r.URL.Path, "/")
-	if len(pathParts) < 4 {
+	LogStep("解析URL路径", map[string]interface{}{
+		"path":      r.URL.Path,
+		"pathParts": pathParts,
+		"length":    len(pathParts),
+	})
+	
+	if len(pathParts) < 5 {
 		http.Error(w, "缺少订单ID参数", http.StatusBadRequest)
 		return
 	}
 
-	orderIdStr := pathParts[3]
+	orderIdStr := pathParts[4] // 订单ID在路径的第5个部分
+	LogStep("提取订单ID字符串", map[string]interface{}{
+		"orderIdStr": orderIdStr,
+	})
+	
 	orderId, err := strconv.Atoi(orderIdStr)
 	if err != nil {
+		LogError("订单ID转换失败", err)
 		http.Error(w, "无效的订单ID", http.StatusBadRequest)
 		return
 	}
