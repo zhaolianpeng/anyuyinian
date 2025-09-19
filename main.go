@@ -2,150 +2,76 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 	"time"
-	"wxcloudrun-golang/db"
-	"wxcloudrun-golang/service"
 )
 
 func main() {
-	if err := db.Init(); err != nil {
-		panic(fmt.Sprintf("mysql init failed with %+v", err))
-	}
+	fmt.Println("=== 启动简化服务 ===")
 
-	// 初始化订单超时处理服务
-	service.InitOrderTimeoutService()
-
-	// 启动SSE管理器（替代WebSocket）
-	go service.SSEManagerInstance.Start()
-
-	// 健康检查端点
+	// 健康检查
 	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		fmt.Fprintf(w, `{"status":"ok","message":"服务运行正常","timestamp":"%s"}`,
+		fmt.Fprintf(w, `{"status":"ok","message":"简化服务运行正常","timestamp":"%s"}`, 
 			time.Now().Format("2006-01-02 15:04:05"))
 	})
 
-	// 基础页面和统计接口
-	http.HandleFunc("/", service.NewLogMiddleware(service.IndexHandler))
-	http.HandleFunc("/api/count", service.NewLogMiddleware(service.CounterHandler))
+	// 根路径
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html")
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprintf(w, `
+<!DOCTYPE html>
+<html>
+<head>
+    <title>安语颐年服务</title>
+</head>
+<body>
+    <h1>安语颐年护理陪诊服务</h1>
+    <p>服务运行正常</p>
+    <p>时间: %s</p>
+    <p>路径: %s</p>
+    <p>方法: %s</p>
+</body>
+</html>`, time.Now().Format("2006-01-02 15:04:05"), r.URL.Path, r.Method)
+	})
 
-	// 微信登录相关接口
-	http.HandleFunc("/api/wx/login", service.NewLogMiddleware(service.WxLoginHandler))
+	// 测试API
+	http.HandleFunc("/api/test", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprintf(w, `{"code":0,"message":"测试API正常","timestamp":"%s"}`, 
+			time.Now().Format("2006-01-02 15:04:05"))
+	})
 
-	// 首页初始化接口
-	http.HandleFunc("/api/home/init", service.NewLogMiddleware(service.HomeInitHandler))
+	// 管理员API测试
+	http.HandleFunc("/api/admin/service/update-price", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Printf("=== 收到管理员API请求 ===\n")
+		fmt.Printf("方法: %s\n", r.Method)
+		fmt.Printf("路径: %s\n", r.URL.Path)
+		fmt.Printf("时间: %s\n", time.Now().Format("2006-01-02 15:04:05"))
+		
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprintf(w, `{"code":0,"message":"管理员API测试正常","timestamp":"%s","path":"%s","method":"%s"}`, 
+			time.Now().Format("2006-01-02 15:04:05"), r.URL.Path, r.Method)
+	})
 
-	// 文件上传和管理接口
-	http.HandleFunc("/api/upload", service.NewLogMiddleware(service.UploadHandler))
-	http.HandleFunc("/api/files", service.NewLogMiddleware(service.GetFileListHandler))
-	http.HandleFunc("/api/file/delete", service.NewLogMiddleware(service.DeleteFileHandler))
-	http.HandleFunc("/api/file/permission", service.NewLogMiddleware(service.UpdateFilePermissionHandler))
-	http.HandleFunc("/api/file/permission/get", service.NewLogMiddleware(service.GetFilePermissionHandler))
+	// 分类API测试
+	http.HandleFunc("/api/service/categories", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprintf(w, `{"code":0,"data":[{"id":1,"name":"智慧养老","icon":"elderly"}]}`)
+	})
 
-	// 系统配置接口
-	http.HandleFunc("/api/config", service.NewLogMiddleware(service.ConfigHandler))
+	fmt.Println("简化服务启动在端口 80")
+	fmt.Println("健康检查: http://localhost/health")
+	fmt.Println("测试API: http://localhost/api/test")
+	fmt.Println("管理员API: http://localhost/api/admin/service/update-price")
+	fmt.Println("分类API: http://localhost/api/service/categories")
 
-	// 用户相关接口
-	http.HandleFunc("/api/user/info", service.NewLogMiddleware(service.GetUserInfoHandler))
-	http.HandleFunc("/api/user/bind_phone", service.NewLogMiddleware(service.BindPhoneHandler))
-	http.HandleFunc("/api/user/update_info", service.NewLogMiddleware(service.UpdateUserInfoHandler))
-	http.HandleFunc("/api/user/decrypt_phone", service.NewLogMiddleware(service.DecryptPhoneNumberHandler))
-	http.HandleFunc("/api/user/address", service.NewLogMiddleware(service.AddressHandler))
-	http.HandleFunc("/api/user/patient", service.NewLogMiddleware(service.PatientHandler))
-
-	// 服务相关接口
-	http.HandleFunc("/api/service/list", service.NewLogMiddleware(service.ServiceListHandler))
-	http.HandleFunc("/api/service/categories", service.NewLogMiddleware(service.ServiceCategoriesHandler))
-	http.HandleFunc("/api/service/detail", service.NewLogMiddleware(service.ServiceDetailHandler))
-	http.HandleFunc("/api/service/form_config/", service.NewLogMiddleware(service.ServiceFormConfigHandler))
-
-	// 订单相关接口
-	http.HandleFunc("/api/order/submit", service.NewLogMiddleware(service.SubmitOrderHandler))
-	http.HandleFunc("/api/order/smart-elderly", service.NewLogMiddleware(service.SmartElderlyOrderHandler))
-	http.HandleFunc("/api/order/pay/", service.NewLogMiddleware(service.PayOrderHandler))
-	http.HandleFunc("/api/order/pay_confirm/", service.NewLogMiddleware(service.PayConfirmHandler))
-	http.HandleFunc("/api/order/cancel/", service.NewLogMiddleware(service.CancelOrderHandler))
-	http.HandleFunc("/api/order/refund/", service.NewLogMiddleware(service.RefundOrderHandler))
-	http.HandleFunc("/api/order/list", service.NewLogMiddleware(service.OrderListHandler))
-	http.HandleFunc("/api/order/detail", service.NewLogMiddleware(service.OrderDetailHandler))
-	http.HandleFunc("/api/order/detail/", service.NewLogMiddleware(service.OrderDetailByIdHandler))
-	http.HandleFunc("/api/order/time_slots", service.NewLogMiddleware(service.GetAvailableTimeSlotsHandler))
-
-	// 支付相关接口
-	http.HandleFunc("/api/payment/notify", service.NewLogMiddleware(service.HandleWechatPayNotify))
-
-	// 订单超时相关接口
-	http.HandleFunc("/api/order/check_expired", service.NewLogMiddleware(service.CheckExpiredOrdersHandler))
-	http.HandleFunc("/api/order/expired_count", service.NewLogMiddleware(service.GetExpiredOrdersCountHandler))
-
-	// 推荐相关接口
-	http.HandleFunc("/api/referral/qrcode", service.NewLogMiddleware(service.ReferralQrCodeHandler))
-	http.HandleFunc("/api/referral/report", service.NewLogMiddleware(service.ReferralReportHandler))
-	http.HandleFunc("/api/referral/config", service.NewLogMiddleware(service.ReferralConfigHandler))
-	http.HandleFunc("/api/referral/apply_cashout", service.NewLogMiddleware(service.ApplyCashoutHandler))
-
-	// 推广中心相关接口
-	http.HandleFunc("/api/promoter/info", service.NewLogMiddleware(service.GetPromoterInfoHandler))
-	http.HandleFunc("/api/promoter/commission_list", service.NewLogMiddleware(service.GetCommissionListHandler))
-	http.HandleFunc("/api/promoter/cashout_list", service.NewLogMiddleware(service.GetCashoutListHandler))
-	http.HandleFunc("/api/promoter/find_user", service.NewLogMiddleware(service.GetUserByPromoterCodeHandler))
-	http.HandleFunc("/api/promoter/generate_codes", service.NewLogMiddleware(service.GeneratePromoterCodesHandler))
-
-	// 二维码相关接口
-	http.HandleFunc("/api/qrcode/generate", service.NewLogMiddleware(service.GenerateQRCodeHandler))
-	http.HandleFunc("/api/qrcode/generate_base64", service.NewLogMiddleware(service.GenerateQRCodeBase64Handler))
-
-	// 客服相关接口
-	http.HandleFunc("/api/kefu/send_msg", service.NewLogMiddleware(service.SendMessageHandler))
-	http.HandleFunc("/api/kefu/faq", service.NewLogMiddleware(service.FaqHandler))
-
-	// 医院相关接口
-	http.HandleFunc("/api/hospital/list", service.NewLogMiddleware(service.HospitalListHandler))
-	http.HandleFunc("/api/hospital/detail/", service.NewLogMiddleware(service.HospitalDetailHandler))
-
-	// SSE路由（替代WebSocket）
-	http.HandleFunc("/sse", service.NewLogMiddleware(service.SSEHandler))
-
-	// 迁移服务相关接口
-	http.HandleFunc("/api/migration/generate_user_ids", service.NewLogMiddleware(service.GenerateUserIdHandler))
-	http.HandleFunc("/api/migration/migrate_users", service.NewLogMiddleware(service.MigrateUsersHandler))
-	http.HandleFunc("/api/migration/migrate_all_tables", service.NewLogMiddleware(service.MigrateAllTablesUserIdHandler))
-	http.HandleFunc("/api/migration/validate", service.NewLogMiddleware(service.ValidateUserIdsHandler))
-
-	// 紧急修复相关接口
-	http.HandleFunc("/api/emergency/fix_user_ids", service.NewLogMiddleware(service.EmergencyFixUserIdsHandler))
-	http.HandleFunc("/api/emergency/test_user_info", service.NewLogMiddleware(service.TestUserInfoHandler))
-	http.HandleFunc("/api/emergency/user_status", service.NewLogMiddleware(service.GetUserStatusHandler))
-
-	// 管理员相关接口
-	http.HandleFunc("/api/admin/login", service.NewLogMiddleware(service.AdminLoginHandler))
-	http.HandleFunc("/api/admin/check-status", service.NewLogMiddleware(service.CheckAdminStatusHandler))
-	http.HandleFunc("/api/admin/users", service.NewLogMiddleware(service.GetAdminUsersHandler))
-	http.HandleFunc("/api/admin/orders", service.NewLogMiddleware(service.GetAdminOrdersHandler))
-	http.HandleFunc("/api/admin/set-admin", service.NewLogMiddleware(service.SetAdminHandler))
-	http.HandleFunc("/api/admin/remove-admin", service.NewLogMiddleware(service.RemoveAdminHandler))
-	http.HandleFunc("/api/admin/stats", service.NewLogMiddleware(service.AdminStatsHandler))
-	http.HandleFunc("/api/admin/admins", service.NewLogMiddleware(service.AdminAdminsHandler))
-	http.HandleFunc("/api/admin/order/update-amount", service.NewLogMiddleware(service.UpdateOrderAmountHandler))
-	http.HandleFunc("/api/admin/order/refund", service.NewLogMiddleware(service.AdminRefundOrderHandler))
-
-	// 管理员服务管理相关接口
-	http.HandleFunc("/api/admin/service/update-price", service.NewLogMiddleware(service.UpdateServicePriceHandler))
-	http.HandleFunc("/api/admin/services", service.NewLogMiddleware(service.GetAdminServicesHandler))
-
-	// 咨询相关接口
-	http.HandleFunc("/api/consultation/create", service.NewLogMiddleware(service.CreateConsultationHandler))
-	http.HandleFunc("/api/consultation/messages", service.NewLogMiddleware(service.GetConsultationMessagesHandler))
-	http.HandleFunc("/api/consultation/send", service.NewLogMiddleware(service.SendConsultationMessageHandler))
-	http.HandleFunc("/api/consultation/status", service.NewLogMiddleware(service.GetConsultationStatusHandler))
-	http.HandleFunc("/api/consultation/close", service.NewLogMiddleware(service.CloseConsultationHandler))
-	http.HandleFunc("/api/consultation/active", service.NewLogMiddleware(service.GetActiveConsultationsHandler))
-	http.HandleFunc("/api/consultation/stats", service.NewLogMiddleware(service.GetConsultationStatsHandler))
-	http.HandleFunc("/api/consultation/notifications", service.NewLogMiddleware(service.GetUnreadNotificationsHandler))
-	http.HandleFunc("/api/consultation/notification/read", service.NewLogMiddleware(service.MarkNotificationAsReadHandler))
-
-	log.Fatal(http.ListenAndServe(":80", nil))
+	if err := http.ListenAndServe(":80", nil); err != nil {
+		fmt.Printf("服务启动失败: %v\n", err)
+	}
 }
