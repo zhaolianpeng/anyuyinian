@@ -117,7 +117,7 @@ function testOrderDataProcessing() {
   
   // 模拟数据处理函数
   const getOrderStatusText = (status) => {
-    const statusMap = { 0: '待支付', 1: '已支付', 2: '已取消', 3: '已完成' };
+    const statusMap = { 0: '待支付', 1: '已支付', 2: '已完成', 3: '已取消', 4: '已退款' };
     return statusMap[status] || '未知';
   };
   
