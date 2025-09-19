@@ -133,7 +133,7 @@ func main() {
 	http.HandleFunc("/api/admin/order/refund", service.NewLogMiddleware(service.AdminRefundOrderHandler))
 
 	// 管理员服务管理相关接口
-	http.HandleFunc("/api/admin/service/update-price", service.NewLogMiddleware(service.UpdateServicePriceHandler))
+	http.HandleFunc("/api/admin/service/updateprice", service.NewLogMiddleware(service.UpdateServicePriceHandler))
 	http.HandleFunc("/api/admin/services", service.NewLogMiddleware(service.GetAdminServicesHandler))
 
 	// 咨询相关接口
