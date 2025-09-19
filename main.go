@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"time"
 	"wxcloudrun-golang/db"
 	"wxcloudrun-golang/service"
 )
@@ -18,6 +19,14 @@ func main() {
 
 	// 启动SSE管理器（替代WebSocket）
 	go service.SSEManagerInstance.Start()
+
+	// 健康检查端点
+	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprintf(w, `{"status":"ok","message":"服务运行正常","timestamp":"%s"}`,
+			time.Now().Format("2006-01-02 15:04:05"))
+	})
 
 	// 基础页面和统计接口
 	http.HandleFunc("/", service.NewLogMiddleware(service.IndexHandler))
