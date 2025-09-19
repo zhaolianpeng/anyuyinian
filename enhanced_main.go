@@ -10,12 +10,12 @@ import (
 
 func main() {
 	fmt.Println("=== 启动增强版简化服务 ===")
-	
+
 	// 检查环境变量
 	fmt.Printf("环境变量检查:\n")
 	fmt.Printf("PORT: %s\n", os.Getenv("PORT"))
 	fmt.Printf("HOST: %s\n", os.Getenv("HOST"))
-	
+
 	// 获取端口
 	port := os.Getenv("PORT")
 	if port == "" {
@@ -28,7 +28,7 @@ func main() {
 		fmt.Printf("收到健康检查请求: %s %s\n", r.Method, r.URL.Path)
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		fmt.Fprintf(w, `{"status":"ok","message":"增强版简化服务运行正常","timestamp":"%s","port":"%s"}`, 
+		fmt.Fprintf(w, `{"status":"ok","message":"增强版简化服务运行正常","timestamp":"%s","port":"%s"}`,
 			time.Now().Format("2006-01-02 15:04:05"), port)
 	})
 
@@ -59,7 +59,7 @@ func main() {
 		fmt.Printf("收到测试API请求: %s %s\n", r.Method, r.URL.Path)
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		fmt.Fprintf(w, `{"code":0,"message":"测试API正常","timestamp":"%s","port":"%s"}`, 
+		fmt.Fprintf(w, `{"code":0,"message":"测试API正常","timestamp":"%s","port":"%s"}`,
 			time.Now().Format("2006-01-02 15:04:05"), port)
 	})
 
@@ -70,10 +70,10 @@ func main() {
 		fmt.Printf("路径: %s\n", r.URL.Path)
 		fmt.Printf("时间: %s\n", time.Now().Format("2006-01-02 15:04:05"))
 		fmt.Printf("端口: %s\n", port)
-		
+
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		fmt.Fprintf(w, `{"code":0,"message":"管理员API测试正常","timestamp":"%s","path":"%s","method":"%s","port":"%s"}`, 
+		fmt.Fprintf(w, `{"code":0,"message":"管理员API测试正常","timestamp":"%s","path":"%s","method":"%s","port":"%s"}`,
 			time.Now().Format("2006-01-02 15:04:05"), r.URL.Path, r.Method, port)
 	})
 
@@ -90,7 +90,7 @@ func main() {
 		fmt.Printf("收到状态检查请求: %s %s\n", r.Method, r.URL.Path)
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		fmt.Fprintf(w, `{"status":"running","port":"%s","timestamp":"%s"}`, 
+		fmt.Fprintf(w, `{"status":"running","port":"%s","timestamp":"%s"}`,
 			port, time.Now().Format("2006-01-02 15:04:05"))
 	})
 
@@ -103,11 +103,11 @@ func main() {
 
 	// 使用log包记录启动信息
 	log.Printf("服务启动在端口: %s", port)
-	
+
 	// 启动服务
 	addr := ":" + port
 	fmt.Printf("监听地址: %s\n", addr)
-	
+
 	if err := http.ListenAndServe(addr, nil); err != nil {
 		fmt.Printf("服务启动失败: %v\n", err)
 		log.Fatalf("服务启动失败: %v", err)

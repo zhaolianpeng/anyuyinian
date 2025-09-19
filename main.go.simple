@@ -13,7 +13,7 @@ func main() {
 	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		fmt.Fprintf(w, `{"status":"ok","message":"简化服务运行正常","timestamp":"%s"}`,
+		fmt.Fprintf(w, `{"status":"ok","message":"简化服务运行正常","timestamp":"%s"}`, 
 			time.Now().Format("2006-01-02 15:04:05"))
 	})
 
@@ -41,7 +41,7 @@ func main() {
 	http.HandleFunc("/api/test", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		fmt.Fprintf(w, `{"code":0,"message":"测试API正常","timestamp":"%s"}`,
+		fmt.Fprintf(w, `{"code":0,"message":"测试API正常","timestamp":"%s"}`, 
 			time.Now().Format("2006-01-02 15:04:05"))
 	})
 
@@ -51,10 +51,10 @@ func main() {
 		fmt.Printf("方法: %s\n", r.Method)
 		fmt.Printf("路径: %s\n", r.URL.Path)
 		fmt.Printf("时间: %s\n", time.Now().Format("2006-01-02 15:04:05"))
-
+		
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		fmt.Fprintf(w, `{"code":0,"message":"管理员API测试正常","timestamp":"%s","path":"%s","method":"%s"}`,
+		fmt.Fprintf(w, `{"code":0,"message":"管理员API测试正常","timestamp":"%s","path":"%s","method":"%s"}`, 
 			time.Now().Format("2006-01-02 15:04:05"), r.URL.Path, r.Method)
 	})
 
