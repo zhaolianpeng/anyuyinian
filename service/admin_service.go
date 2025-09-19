@@ -1296,6 +1296,7 @@ type UpdateServicePriceRequest struct {
 	NewPrice         float64 `json:"newPrice"`
 	NewOriginalPrice float64 `json:"newOriginalPrice"`
 	Reason           string  `json:"reason"`
+	AdminUserId      string  `json:"adminUserId"`
 }
 
 // GetAdminServicesHandler 获取管理员服务列表接口
@@ -1399,17 +1400,6 @@ func UpdateServicePriceHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 读取管理员身份（支持query或header）
-	adminUserId := r.URL.Query().Get("adminUserId")
-	if adminUserId == "" {
-		adminUserId = r.Header.Get("adminUserId")
-	}
-	if adminUserId == "" {
-		LogError("缺少必要参数", fmt.Errorf("adminUserId参数为空"))
-		http.Error(w, "缺少adminUserId参数", http.StatusBadRequest)
-		return
-	}
-
 	// 解析请求体
 	var req UpdateServicePriceRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -1417,6 +1407,20 @@ func UpdateServicePriceHandler(w http.ResponseWriter, r *http.Request) {
 		response := &AdminResponse{Code: -1, ErrorMsg: "请求体格式错误"}
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(response)
+		return
+	}
+
+	// 读取管理员身份（优先使用请求体，其次query，最后header）
+	adminUserId := req.AdminUserId
+	if adminUserId == "" {
+		adminUserId = r.URL.Query().Get("adminUserId")
+	}
+	if adminUserId == "" {
+		adminUserId = r.Header.Get("adminUserId")
+	}
+	if adminUserId == "" {
+		LogError("缺少必要参数", fmt.Errorf("adminUserId参数为空"))
+		http.Error(w, "缺少adminUserId参数", http.StatusBadRequest)
 		return
 	}
 
