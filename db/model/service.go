@@ -11,6 +11,7 @@ type ServiceItemModel struct {
 	Price         float64   `gorm:"column:price;not null" json:"price"`
 	OriginalPrice float64   `gorm:"column:originalPrice" json:"originalPrice"`
 	ImageUrl      string    `gorm:"column:imageUrl" json:"imageUrl"`
+	ImageCosId    string    `gorm:"column:imageCosId" json:"imageCosId"`     // 腾讯云对象存储ID
 	DetailImages  string    `gorm:"column:detailImages" json:"detailImages"` // JSON数组
 	FormConfig    string    `gorm:"column:formConfig" json:"formConfig"`     // JSON配置
 	VideoUrl      string    `gorm:"column:videoUrl" json:"videoUrl"`         // 视频URL

@@ -1285,6 +1285,7 @@ type AdminServiceInfo struct {
 	Price         float64   `json:"price"`
 	OriginalPrice float64   `json:"originalPrice"`
 	ImageUrl      string    `json:"imageUrl"`
+	ImageCosId    string    `json:"imageCosId"` // 腾讯云对象存储ID
 	Status        int       `json:"status"`
 	StatusText    string    `json:"statusText"`
 	Sort          int       `json:"sort"`
@@ -1370,6 +1371,7 @@ func GetAdminServicesHandler(w http.ResponseWriter, r *http.Request) {
 			Price:         s.Price,
 			OriginalPrice: s.OriginalPrice,
 			ImageUrl:      s.ImageUrl,
+			ImageCosId:    s.ImageCosId,
 			Status:        s.Status,
 			StatusText:    getServiceStatusText(s.Status),
 			Sort:          s.Sort,
