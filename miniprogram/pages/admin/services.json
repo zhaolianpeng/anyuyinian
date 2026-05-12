@@ -1,0 +1,6 @@
+{
+  "navigationBarTitleText": "服务管理",
+  "enablePullDownRefresh": true,
+  "onReachBottomDistance": 50,
+  "backgroundColor": "#f5f5f5"
+} 

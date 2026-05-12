@@ -1,0 +1,29 @@
+<view class="login-container">
+  <view class="login-card">
+    <view class="login-title">欢迎使用安语颐年</view>
+    <view class="login-subtitle">专业的医疗护理服务平台</view>
+    
+    <!-- 协议勾选 -->
+    <checkbox-group bindchange="onProtocolChange">
+      <label class="protocol-row">
+        <checkbox value="agree" checked="{{protocolAgreed}}" />
+        <text class="protocol-text">我已阅读并同意</text>
+        <text class="link" bindtap="onUserAgreement">《用户协议》</text>
+        <text class="protocol-text">和</text>
+        <text class="link" bindtap="onPrivacyPolicy">《隐私政策》</text>
+      </label>
+    </checkbox-group>
+    
+    <button 
+      class="login-btn" 
+      catchtap="onLoginTap"
+      loading="{{loading}}"
+      disabled="{{loading || !protocolAgreed}}"
+    >
+      {{loading ? '登录中...' : '微信登录'}}
+    </button>
+    
+    <!-- 说明文字保留入口（可选） -->
+    <view class="login-tips"></view>
+  </view>
+</view>

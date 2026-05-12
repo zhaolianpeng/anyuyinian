@@ -1,0 +1,296 @@
+<!-- 加载状态 -->
+<view wx:if="{{loading}}" class="loading-container">
+  <view class="loading">加载中...</view>
+</view>
+
+
+<!-- 网络错误提示 -->
+<view wx:elif="{{networkError}}" class="error-container">
+  <view class="error-content">
+    <image src="/images/empty-state.png" class="error-image" mode="aspectFit" />
+    <text class="error-title">网络连接异常</text>
+    <text class="error-desc">请检查网络设置后重试</text>
+    <button class="retry-btn" bindtap="initHome">重新加载</button>
+  </view>
+</view>
+
+<!-- 首页内容 -->
+<view wx:else class="home-container">
+
+
+
+
+  <!-- 轮播Banner -->
+  <swiper class="banner-swiper" 
+          indicator-dots="{{true}}" 
+          autoplay="{{!isVideoPlaying}}" 
+          interval="{{5000}}" 
+          duration="{{500}}"
+          circular="{{true}}"
+          indicator-color="rgba(255,255,255,0.5)"
+          indicator-active-color="#ffffff"
+          bindchange="onSwiperChange">
+    
+    <!-- 第一个Banner：图片内容 -->
+    <swiper-item>
+      <view class="main-banner">
+        <image class="main-banner-image" src="{{mainBannerImage}}" mode="aspectFill" />
+        <view class="main-banner-overlay"></view>
+        <view class="banner-content">
+          <view class="banner-text">
+            <text class="banner-title">不管白天 还是黑夜</text>
+            <text class="banner-subtitle">24小时我们在您身边</text>
+          </view>
+          <button class="banner-phone-btn" bindtap="onCallService">
+            <text class="phone-icon">📞</text>
+            <text>13522113924</text>
+          </button>
+        </view>
+      </view>
+    </swiper-item>
+    
+    <!-- 第二个Banner：视频播放 -->
+    <swiper-item>
+      <view class="video-banner">
+        <image wx:if="{{videoPoster}}" class="video-poster-image" src="{{videoPoster}}" mode="aspectFill" />
+        <!-- 视频加载状态 -->
+        <view wx:if="{{!videoUrl}}" class="video-loading">
+          <view class="loading-spinner"></view>
+          <text class="loading-text">视频加载中...</text>
+        </view>
+        
+        <!-- 优化后的视频播放器 -->
+        <video 
+          wx:if="{{videoUrl && !fallbackMode}}"
+          id="homeVideo"
+          class="banner-video"
+          src="{{videoUrl}}"
+          poster="{{videoPoster}}"
+          controls="{{true}}"
+          autoplay="{{false}}"
+          loop="{{true}}"
+          muted="{{true}}"
+          show-play-btn="{{true}}"
+          show-center-play-btn="{{true}}"
+          show-fullscreen-btn="{{false}}"
+          show-progress="{{true}}"
+          show-loading="{{true}}"
+          enable-progress-gesture="{{true}}"
+          object-fit="cover"
+          preload="metadata"
+          style="width: 100%; height: 100%;"
+          bindplay="onVideoPlay"
+          bindpause="onVideoPause"
+          bindended="onVideoEnded"
+          binderror="onVideoError"
+          bindloadstart="onVideoLoadStart"
+          bindloadeddata="onVideoLoadedData"
+          bindwaiting="onVideoWaiting"
+          bindcanplay="onVideoCanPlay"
+          bindenterpictureinpicture="onVideoEnterPictureInPicture"
+          bindleavepictureinpicture="onVideoLeavePictureInPicture">
+        </video>
+        
+        <!-- 降级模式：只显示封面图 -->
+        <view wx:if="{{fallbackMode && videoPoster}}" class="fallback-banner">
+          <image class="fallback-image" src="{{videoPoster}}" mode="aspectFill" />
+          <view class="fallback-overlay">
+            <view class="fallback-text">
+              <text class="fallback-title">专业护理服务</text>
+              <text class="fallback-subtitle">用心呵护每一位长者</text>
+              <view class="fallback-actions">
+                <button class="contact-btn" bindtap="onCallService">联系客服</button>
+              </view>
+            </view>
+          </view>
+        </view>
+        
+        <!-- 视频加载失败提示 -->
+        <view wx:if="{{videoUrl && videoLoadError}}" class="video-error">
+          <text class="error-icon">⚠️</text>
+          <text class="error-text">视频加载失败</text>
+          <button class="retry-btn" bindtap="retryLoadVideo">重试</button>
+        </view>
+        
+        <!-- 视频覆盖层 -->
+        <view class="video-overlay">
+          <view class="video-text">
+            <text class="video-title">专业护理服务</text>
+            <text class="video-subtitle">用心呵护每一位长者</text>
+          </view>
+        </view>
+      </view>
+    </swiper-item>
+    
+    
+  </swiper>
+
+  <!-- 快速服务入口 -->
+  <view class="quick-service">
+    <view class="service-card" bindtap="onQuickAppointment">
+      <view class="service-icon appointment-icon">📱</view>
+      <text class="service-title">一键预约</text>
+      <text class="service-desc">快速预约护工服务</text>
+    </view>
+    <view class="service-card" bindtap="onOnlineConsultation">
+      <view class="service-icon consultation-icon">💻</view>
+      <text class="service-title">在线咨询</text>
+      <text class="service-desc">3分钟内解决</text>
+    </view>
+  </view>
+
+  <!-- 服务分类标签 -->
+  <view class="service-tabs">
+    <view 
+      wx:for="{{serviceCategories}}" 
+      wx:key="value" 
+      class="tab-item {{currentServiceCategory === item.value ? 'active' : ''}}"
+      bindtap="onServiceCategoryTap"
+      data-category="{{item.value}}"
+    >
+      <text>{{item.name}}</text>
+    </view>
+  </view>
+
+  <!-- 服务列表 -->
+  <view class="service-list">
+    <!-- 加载状态 -->
+    <view wx:if="{{loading}}" class="loading-services">
+      <text>加载中...</text>
+    </view>
+    
+    <!-- 无服务状态 -->
+    <view wx:if="{{!loading && currentServices.length === 0}}" class="no-services">
+      <text>该分类下暂无服务</text>
+    </view>
+    
+    <!-- 服务列表 -->
+    <view 
+      wx:if="{{!loading && currentServices.length > 0}}"
+      wx:for="{{currentServices}}" 
+      wx:key="id" 
+      class="service-item" 
+      bindtap="onBookService" 
+      data-service="{{item}}"
+    >
+      <view class="service-image-container">
+        <image src="{{item.imageUrl}}" class="service-image" mode="aspectFill" binderror="onHomeServiceImageError" data-index="{{index}}" />
+      </view>
+      <view class="service-info">
+        <text class="service-name">{{item.name}}</text>
+        <text class="service-description">{{item.description}}</text>
+        <view class="service-price">
+          <text class="price-symbol">¥</text>
+          <text class="price-amount">{{item.price || '0'}}</text>
+          <text class="price-unit">{{item.price ? '元' : '免费'}}</text>
+        </view>
+        <button class="book-btn" catchtap="onBookService" data-service="{{item}}">预约服务</button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 全部服务按钮 -->
+  <view class="all-services-btn" bindtap="onAllServices">
+    <text>全部服务</text>
+  </view>
+
+  <!-- 紧急需求服务 -->
+  <view class="urgent-service">
+    <view class="urgent-header">
+      <text class="urgent-title">急人之所急,我们理解你的急</text>
+    </view>
+    <view class="urgent-main">
+      <view class="urgent-number">
+        <text class="number-label">小时</text>
+        <text class="number-value">12</text>
+        <text class="number-desc">护工送到家</text>
+      </view>
+    </view>
+    <view class="urgent-process">
+      <view class="process-step">
+        <text class="step-number">1</text>
+        <text class="step-text">3分钟咨询回复</text>
+      </view>
+      <view class="process-arrow">→</view>
+      <view class="process-step">
+        <text class="step-number">2</text>
+        <text class="step-text">10分钟顾问一对一VIP服务</text>
+      </view>
+      <view class="process-arrow">→</view>
+      <view class="process-step">
+        <text class="step-number">3</text>
+        <text class="step-text">6小时面谈</text>
+      </view>
+    </view>
+    <button class="urgent-book-btn" bindtap="onQuickAppointment">预约服务</button>
+  </view>
+
+  <!-- 平台保障 -->
+  <view class="platform-guarantee">
+    <view class="guarantee-header">
+      <text class="guarantee-title">您担心的,我们都知道,平台保障全程护航</text>
+    </view>
+    <view class="guarantee-grid">
+      <view class="guarantee-item">
+        <view class="guarantee-icon">👩‍⚕️</view>
+        <text class="guarantee-text">护工专业性培训</text>
+      </view>
+      <view class="guarantee-item">
+        <view class="guarantee-icon">💰</view>
+        <text class="guarantee-text">订单资金监管</text>
+      </view>
+      <view class="guarantee-item">
+        <view class="guarantee-icon">🔍</view>
+        <text class="guarantee-text">服务全程透明</text>
+      </view>
+      <view class="guarantee-item">
+        <view class="guarantee-icon">🏆</view>
+        <text class="guarantee-text">售后保障</text>
+      </view>
+    </view>
+    <view class="guarantee-tree">🌳</view>
+  </view>
+
+  <!-- 透明度说明 -->
+  <view class="transparency-section">
+    <image src="/images/default-avatar.png" class="transparency-image" mode="aspectFill" />
+    <view class="transparency-content">
+      <text class="transparency-title">服务全程透明</text>
+      <text class="transparency-desc">进一步了解,我们是如何做到全透明?</text>
+    </view>
+  </view>
+
+  <!-- 公司历程 -->
+  <view class="company-history">
+    <view class="history-header">
+      <text class="history-title">感谢您的一路陪伴,荣誉是最好的勋章</text>
+    </view>
+    <view class="history-content">
+      <text>2018年，我们创建了"安语颐年"品牌，秉承"用心服务，用爱守护"的服务理念，与黑龙江的医院建立合作关系，为千万家庭提供专业的居家养老服务平台。</text>
+    </view>
+  </view>
+
+  <!-- 集团背书 -->
+  <view class="group-endorsement">
+    <view class="endorsement-header">
+      <text class="endorsement-title">强大的集团背书</text>
+    </view>
+    <view class="endorsement-logos">
+      <view class="logo-item">
+        <text class="logo-text">安语颐年</text>
+      </view>
+      <view class="logo-item">
+        <text class="logo-text">中煌炜灿</text>
+      </view>
+    </view>
+    <view class="endorsement-content">
+      <text>"安语颐年"创建于2018年，隶属于北京安语颐年生活服务有限公司，由海南中煌炜灿投资有限公司投资，提供专业的居家养老服务平台。</text>
+    </view>
+  </view>
+
+  <!-- 客服热线 -->
+  <view class="service-hotline" bindtap="onCallService">
+    <text class="hotline-icon">📞</text>
+    <text class="hotline-text">服务热线: 13522113924</text>
+  </view>
+</view>

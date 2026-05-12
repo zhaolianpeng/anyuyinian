@@ -1,0 +1,70 @@
+<view class="service-list-container">
+
+  <!-- 搜索栏 -->
+  <view class="search-bar">
+    <input 
+      class="search-input" 
+      placeholder="搜索服务项目" 
+      bindinput="onSearch"
+    />
+  </view>
+
+  <!-- 分类选择 -->
+  <view class="category-tabs">
+    <scroll-view scroll-x class="category-scroll">
+      <view class="category-list">
+        <view 
+          class="category-item {{category === item.value ? 'active' : ''}}"
+          wx:for="{{categories}}"
+          wx:key="value"
+          data-category="{{item.value}}"
+          bindtap="onCategorySelect"
+        >
+          {{item.name}}
+        </view>
+      </view>
+    </scroll-view>
+  </view>
+
+  <!-- 服务列表 -->
+  <view class="service-list">
+    <view 
+      class="service-item"
+      wx:for="{{services}}"
+      wx:key="id"
+      data-service-id="{{item.id}}"
+      bindtap="onServiceTap"
+    >
+      <view class="service-image">
+        <image 
+          src="{{item.imageUrl || '/images/service-default.jpg'}}" 
+          mode="aspectFill"
+        />
+      </view>
+      <view class="service-content">
+        <view class="service-title">{{item.name}}</view>
+        <view class="service-desc">{{item.description}}</view>
+        <view class="service-category">{{item.category}}</view>
+        <view class="service-price">
+          <text class="current-price">¥{{item.price}}</text>
+          <text class="original-price" wx:if="{{item.originalPrice > item.price}}">¥{{item.originalPrice}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 加载状态 -->
+  <view class="loading-more" wx:if="{{loading}}">
+    <text>加载中...</text>
+  </view>
+
+  <view class="no-more" wx:if="{{!hasMore && services.length > 0}}">
+    <text>没有更多了</text>
+  </view>
+
+  <!-- 空状态 -->
+  <view class="empty-state" wx:if="{{!loading && services.length === 0}}">
+    <image src="/images/empty-state.png" mode="aspectFit"></image>
+    <text>暂无相关服务</text>
+  </view>
+</view> 

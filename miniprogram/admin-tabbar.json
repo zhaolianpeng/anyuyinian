@@ -1,0 +1,20 @@
+{
+  "color": "#999999",
+  "selectedColor": "#667eea",
+  "backgroundColor": "#ffffff",
+  "borderStyle": "black",
+  "list": [
+    {
+      "pagePath": "pages/admin/orders",
+      "text": "订单"
+    },
+    {
+      "pagePath": "pages/admin/users",
+      "text": "客户"
+    },
+    {
+      "pagePath": "pages/user/profile",
+      "text": "我的"
+    }
+  ]
+} 

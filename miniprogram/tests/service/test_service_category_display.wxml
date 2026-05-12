@@ -1,0 +1,21 @@
+<view class="test-container">
+  <view class="test-header">
+    <text class="test-title">服务分类显示测试</text>
+    <text class="test-subtitle">测试首页服务分类显示功能</text>
+  </view>
+
+  <view class="test-results">
+    <view class="test-item" wx:for="{{testResults}}" wx:key="name">
+      <view class="test-name">{{item.name}}</view>
+      <view class="test-description">{{item.description}}</view>
+      <view class="test-status {{item.status}}">
+        {{item.status === 'passed' ? '通过' : '失败'}}
+      </view>
+    </view>
+  </view>
+
+  <view class="test-actions">
+    <button class="retry-btn" bindtap="onRetryTests">重新测试</button>
+    <button class="home-btn" bindtap="onBackToHome">返回首页</button>
+  </view>
+</view>

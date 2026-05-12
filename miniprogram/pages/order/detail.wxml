@@ -1,0 +1,187 @@
+<!--pages/order/detail.wxml-->
+<view class="order-detail-container">
+  <!-- 订单状态 -->
+  <view class="status-section">
+    <view class="status-info">
+      <text class="status-text" style="color: {{statusMap[order.status].color}}">
+        {{statusMap[order.status].text}}
+      </text>
+      <text class="status-desc">
+        {{order.status === 0 ? '请在30分钟内完成支付' : 
+          order.status === 1 ? '订单已支付，等待服务' :
+          order.status === 2 ? '服务已完成' :
+          order.status === 3 ? '订单已取消' : '订单已退款'}}
+      </text>
+      <text class="countdown" wx:if="{{order.status === 0 && countdown}}">{{countdown}}</text>
+    </view>
+  </view>
+
+  <!-- 服务信息 -->
+  <view class="service-section">
+    <view class="section-title">服务信息</view>
+    <view class="service-info">
+      <image class="service-image" src="{{order.serviceImageUrl}}" mode="aspectFill" />
+      <view class="service-details">
+        <text class="service-name">{{order.serviceName}}</text>
+        <text class="service-price">¥{{order.price}}</text>
+        <text class="service-quantity">数量：{{order.quantity}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 订单信息 -->
+  <view class="order-section">
+    <view class="section-title">订单信息</view>
+    <view class="order-info">
+      <view class="info-item">
+        <text class="info-label">订单号：</text>
+        <text class="info-value">{{order.orderNo}}</text>
+        <text class="copy-btn" bindtap="onCopyOrderNo">复制</text>
+      </view>
+      <view class="info-item">
+        <text class="info-label">下单时间：</text>
+        <text class="info-value">{{order.formattedCreatedAt || order.createdAt}}</text>
+      </view>
+      <view class="info-item" wx:if="{{order.payDeadline && order.status === 0}}">
+        <text class="info-label">支付截止：</text>
+        <text class="info-value">{{order.formattedPayDeadline || order.payDeadline}}</text>
+      </view>
+      <view class="info-item" wx:if="{{order.payTime}}">
+        <text class="info-label">支付时间：</text>
+        <text class="info-value">{{order.formattedPayTime || order.payTime}}</text>
+      </view>
+      <view class="info-item" wx:if="{{order.transactionId}}">
+        <text class="info-label">交易号：</text>
+        <text class="info-value">{{order.transactionId}}</text>
+      </view>
+      <view class="info-item">
+        <text class="info-label">支付方式：</text>
+        <text class="info-value">{{order.payMethod || '微信支付'}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 预约信息 -->
+  <view class="appointment-section">
+    <view class="section-title">预约信息</view>
+    <view class="appointment-info">
+      <!-- 基本信息 -->
+      <view class="info-item" wx:if="{{order.appointmentDate}}">
+        <text class="info-label">预约日期：</text>
+        <text class="info-value">{{order.appointmentDate}}</text>
+      </view>
+      <view class="info-item" wx:if="{{order.appointmentTime}}">
+        <text class="info-label">预约时间：</text>
+        <text class="info-value">{{order.formattedAppointmentTime || order.appointmentTime}}</text>
+      </view>
+      <view class="info-item" wx:if="{{order.quantity}}">
+        <text class="info-label">预约数量：</text>
+        <text class="info-value">{{order.quantity}}次</text>
+      </view>
+      
+      <!-- 患者信息 -->
+      <view class="info-item" wx:if="{{order.patientName}}">
+        <text class="info-label">就诊人：</text>
+        <text class="info-value">{{order.patientName}}</text>
+      </view>
+      <view class="info-item" wx:if="{{order.patientPhone}}">
+        <text class="info-label">联系电话：</text>
+        <text class="info-value">{{order.patientPhone}}</text>
+      </view>
+      
+      <!-- 地址信息 -->
+      <view class="info-item" wx:if="{{order.addressInfo}}">
+        <text class="info-label">服务地址：</text>
+        <text class="info-value">{{order.addressInfo}}</text>
+      </view>
+      
+      <!-- 病史信息 -->
+      <view class="info-item" wx:if="{{order.diseaseInfo}}">
+        <text class="info-label">既往病史：</text>
+        <text class="info-value">{{order.diseaseInfo}}</text>
+      </view>
+      <view class="info-item" wx:if="{{order.needToiletAssist !== undefined}}">
+        <text class="info-label">助排二便：</text>
+        <text class="info-value">{{order.needToiletAssist === 1 ? '需要' : '不需要'}}</text>
+      </view>
+      
+      <!-- 备注信息 -->
+      <view class="info-item" wx:if="{{order.remark}}">
+        <text class="info-label">备注：</text>
+        <text class="info-value">{{order.remark}}</text>
+      </view>
+      
+      <!-- 动态表单数据 -->
+      <view wx:for="{{order.parsedFormData}}" wx:key="key" class="info-item" wx:if="{{order.parsedFormData && order.parsedFormData.length > 0}}">
+        <text class="info-label">{{item.key}}：</text>
+        <text class="info-value">{{item.value}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 备注信息 -->
+  <view class="remark-section" wx:if="{{order.remark}}">
+    <view class="section-title">备注信息</view>
+    <view class="remark-content">
+      <text class="remark-text">{{order.remark}}</text>
+    </view>
+  </view>
+
+  <!-- 费用信息 -->
+  <view class="cost-section">
+    <view class="section-title">费用信息</view>
+    <view class="cost-info">
+      <view class="cost-item">
+        <text class="cost-label">服务费用</text>
+        <text class="cost-value">¥{{order.price}}</text>
+      </view>
+      <view class="cost-item">
+        <text class="cost-label">数量</text>
+        <text class="cost-value">{{order.quantity}}</text>
+      </view>
+      <view class="cost-divider"></view>
+      <view class="cost-item total">
+        <text class="cost-label">总计</text>
+        <text class="cost-value">¥{{order.calculatedTotalAmount || order.totalAmount}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 底部操作栏 -->
+  <view class="bottom-actions">
+    <!-- 待支付状态 -->
+    <view wx:if="{{order.status === 0}}" class="action-buttons">
+      <button class="btn-secondary" bindtap="onCancelOrder">取消订单</button>
+      <button class="btn-primary" bindtap="onPayOrder">立即支付</button>
+    </view>
+    
+    <!-- 已支付状态 -->
+    <view wx:if="{{order.status === 1}}" class="action-buttons">
+      <button class="btn-secondary" bindtap="onContactService">联系客服</button>
+      <button class="btn-primary" bindtap="onRefundOrder">申请退款</button>
+    </view>
+    
+    <!-- 已完成状态 -->
+    <view wx:if="{{order.status === 2}}" class="action-buttons">
+      <button class="btn-secondary" bindtap="onContactService">联系客服</button>
+      <button class="btn-primary" bindtap="onRefundOrder">申请退款</button>
+    </view>
+    
+    <!-- 已取消状态 -->
+    <view wx:if="{{order.status === 3}}" class="action-buttons">
+      <button class="btn-secondary" bindtap="onContactService">联系客服</button>
+    </view>
+    
+    <!-- 已退款状态 -->
+    <view wx:if="{{order.status === 4}}" class="action-buttons">
+      <button class="btn-secondary" bindtap="onContactService">联系客服</button>
+    </view>
+  </view>
+</view>
+
+<!-- 加载状态 -->
+<view wx:if="{{loading}}" class="loading-overlay">
+  <view class="loading-content">
+    <text class="loading-text">加载中...</text>
+  </view>
+</view>

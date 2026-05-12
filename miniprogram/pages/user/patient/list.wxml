@@ -1,0 +1,45 @@
+<!--pages/user/patient/list.wxml-->
+<view class="container">
+  <!-- 顶部标题 -->
+  <view class="header">
+    <text class="title">患者管理</text>
+    <button class="add-btn" bindtap="addPatient">+ 新增患者</button>
+  </view>
+
+  <!-- 就诊人列表 -->
+  <view class="patient-list" wx:if="{{patientList.length > 0}}">
+    <view class="patient-item" wx:for="{{patientList}}" wx:key="id">
+      <view class="patient-info" bindtap="selectPatient" data-patient="{{item}}">
+        <view class="user-info">
+          <text class="name">{{item.name}}</text>
+          <text class="relation">{{item.relation}}</text>
+          <view class="default-tag" wx:if="{{item.isDefault}}">默认</view>
+        </view>
+        <view class="patient-detail">
+          <text class="id-card">{{item.idCard}}</text>
+          <text class="phone">{{item.phone}}</text>
+        </view>
+        <view class="patient-extra">
+          <text class="gender">{{item.gender === 1 ? '男' : '女'}}</text>
+          <text class="birthday">{{item.birthday}}</text>
+        </view>
+      </view>
+      <view class="patient-actions">
+        <button class="action-btn edit" bindtap="editPatient" data-patient="{{item}}">编辑</button>
+        <button class="action-btn delete" bindtap="deletePatient" data-id="{{item.id}}">删除</button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 空状态 -->
+  <view class="empty-state" wx:if="{{patientList.length === 0}}">
+    <image class="empty-icon" src="/images/empty-state.png"></image>
+    <text class="empty-text">暂无患者信息</text>
+    <button class="add-btn" bindtap="addPatient">添加患者</button>
+  </view>
+
+  <!-- 加载状态 -->
+  <view class="loading" wx:if="{{loading}}">
+    <text>加载中...</text>
+  </view>
+</view>

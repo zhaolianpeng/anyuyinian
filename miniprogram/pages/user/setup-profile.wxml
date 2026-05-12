@@ -1,0 +1,97 @@
+<view class="setup-container">
+  <!-- 头部 -->
+  <view class="header">
+    <view class="back-btn" bindtap="onBack">←</view>
+    <text class="title">完善资料</text>
+  </view>
+
+  <!-- 步骤1: 获取微信信息 -->
+  <view class="step-container" wx:if="{{step === 1}}">
+    <view class="step-title">第一步：获取微信信息</view>
+    <view class="step-desc">点击下方按钮获取您的微信昵称和手机号</view>
+    
+    <view class="info-card">
+      <view class="info-item">
+        <text class="label">当前昵称：</text>
+        <text class="value">{{userInfo.nickName || '未设置'}}</text>
+      </view>
+      <view class="info-item">
+        <text class="label">当前手机号：</text>
+        <text class="value">{{userInfo.phone || '未绑定'}}</text>
+      </view>
+    </view>
+
+    <button class="primary-btn" bindtap="getWxUserInfo" loading="{{loading}}">
+      获取微信信息
+    </button>
+  </view>
+
+  <!-- 步骤2: 确认设置 -->
+  <view class="step-container" wx:if="{{step === 2}}">
+    <view class="step-title">第二步：确认设置</view>
+    <view class="step-desc">请确认以下信息是否正确</view>
+    
+    <view class="info-card">
+      <view class="info-item">
+        <text class="label">微信昵称：</text>
+        <text class="value">{{wxUserInfo.nickName}}</text>
+      </view>
+      <view class="info-item">
+        <text class="label">微信头像：</text>
+        <image class="avatar" src="{{wxUserInfo.avatarUrl}}" mode="aspectFill"></image>
+      </view>
+      <view class="info-item">
+        <text class="label">手机号：</text>
+        <text class="value">{{phone || '未获取到'}}</text>
+        <button 
+          class="phone-btn" 
+          open-type="getPhoneNumber" 
+          bindgetphonenumber="onGetPhoneNumber"
+          wx:if="{{!phone}}"
+        >
+          获取手机号
+        </button>
+        <button class="phone-btn" bindtap="onShowPhoneModal" wx:if="{{!phone}}">
+          手动输入
+        </button>
+      </view>
+    </view>
+
+    <button class="primary-btn" bindtap="confirmSetup" loading="{{loading}}">
+      确认设置
+    </button>
+  </view>
+
+  <!-- 手机号输入弹窗 -->
+  <view class="modal-overlay" wx:if="{{showPhoneModal}}" bindtap="onClosePhoneModal">
+    <view class="modal-content" catchtap="stopPropagation">
+      <view class="modal-header">
+        <text class="modal-title">输入手机号</text>
+        <view class="modal-close" bindtap="onClosePhoneModal">×</view>
+      </view>
+      
+      <view class="modal-body">
+        <input 
+          class="phone-input" 
+          type="number" 
+          placeholder="请输入手机号" 
+          value="{{phone}}"
+          bindinput="onInputPhone"
+          maxlength="11"
+        />
+      </view>
+      
+      <view class="modal-footer">
+        <button class="cancel-btn" bindtap="onClosePhoneModal">取消</button>
+        <button class="confirm-btn" bindtap="onConfirmPhone">确认</button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 加载状态 -->
+  <view class="loading-overlay" wx:if="{{loading}}">
+    <view class="loading-content">
+      <text>处理中...</text>
+    </view>
+  </view>
+</view> 

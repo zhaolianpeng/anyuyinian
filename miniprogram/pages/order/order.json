@@ -1,0 +1,6 @@
+{
+  "navigationBarTitleText": "服务下单",
+  "usingComponents": {
+    "calendar-picker": "../../components/calendar-picker/calendar-picker"
+  }
+}

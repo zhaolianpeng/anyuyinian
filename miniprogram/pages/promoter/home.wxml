@@ -1,0 +1,198 @@
+<!--pages/promoter/home.wxml-->
+<view class="container">
+  <!-- 加载状态 -->
+  <view wx:if="{{loading}}" class="loading">
+    <text>加载中...</text>
+  </view>
+
+  <!-- 推广信息 -->
+  <view wx:if="{{!loading && promoterInfo}}" class="promoter-info">
+    <!-- 用户信息 -->
+    <view class="user-card">
+      <image class="avatar" src="{{promoterInfo.avatarUrl || '/images/default-avatar.png'}}" mode="aspectFill"></image>
+      <view class="user-info">
+        <text class="nickname">{{promoterInfo.nickName || '微信用户'}}</text>
+        <text class="promoter-id">推广码：{{promoterInfo.promoterCode}}</text>
+      </view>
+      <button class="copy-btn" bindtap="onCopyPromoterId">复制</button>
+    </view>
+
+    <!-- 统计数据 -->
+    <view class="stats-grid">
+      <view class="stat-item">
+        <text class="stat-value">{{promoterInfo.totalIncome || 0}}</text>
+        <text class="stat-label">总收入(元)</text>
+      </view>
+      <view class="stat-item">
+        <text class="stat-value">{{promoterInfo.todayIncome || 0}}</text>
+        <text class="stat-label">今日收入(元)</text>
+      </view>
+      <view class="stat-item">
+        <text class="stat-value">{{promoterInfo.monthIncome || 0}}</text>
+        <text class="stat-label">本月收入(元)</text>
+      </view>
+      <view class="stat-item">
+        <text class="stat-value">{{promoterInfo.totalOrders || 0}}</text>
+        <text class="stat-label">总订单数</text>
+      </view>
+    </view>
+
+    <!-- 推广二维码 -->
+    <view class="qr-section">
+      <text class="section-title">推广二维码</text>
+      <view class="qr-container">
+        <view class="qr-generate-btn" bindtap="onPreviewQrCode">
+          <image 
+            wx:if="{{promoterInfo.qrCodeUrl && !promoterInfo.qrCodeUrl.includes('placeholder')}}" 
+            class="qr-code" 
+            src="{{promoterInfo.qrCodeUrl}}" 
+            mode="aspectFit"
+          ></image>
+          <view wx:else class="qr-placeholder">
+            <text class="qr-text">点击生成二维码</text>
+            <text class="qr-desc">用于分享推广</text>
+          </view>
+        </view>
+      </view>
+      <button class="share-btn" open-type="share">分享小程序</button>
+    </view>
+  </view>
+
+  <!-- 标签页 -->
+  <view class="tabs">
+    <view class="tab-item {{activeTab === 0 ? 'active' : ''}}" data-index="0" bindtap="onTabChange">
+      <text>推广信息</text>
+    </view>
+    <view class="tab-item {{activeTab === 1 ? 'active' : ''}}" data-index="1" bindtap="onTabChange">
+      <text>佣金记录</text>
+    </view>
+    <view class="tab-item {{activeTab === 2 ? 'active' : ''}}" data-index="2" bindtap="onTabChange">
+      <text>提现记录</text>
+    </view>
+  </view>
+
+  <!-- 佣金记录列表 -->
+  <view wx:if="{{activeTab === 1}}" class="commission-list">
+    <view wx:if="{{commissionList.length === 0}}" class="empty-state">
+      <image src="/images/empty-state.png" mode="aspectFit"></image>
+      <text>暂无佣金记录</text>
+    </view>
+    
+    <view wx:else class="list-container">
+      <view wx:for="{{commissionList}}" wx:key="id" class="commission-item">
+        <view class="item-header">
+          <text class="order-no">订单号：{{item.orderNo}}</text>
+          <text class="status {{item.status === 1 ? 'settled' : item.status === 2 ? 'withdrawn' : 'pending'}}">
+            {{item.statusText}}
+          </text>
+        </view>
+        <view class="item-content">
+          <view class="amount-info">
+            <text class="amount">¥{{item.amount}}</text>
+            <text class="rate">佣金比例：{{item.rate * 100}}%</text>
+          </view>
+          <text class="time">{{item.createdAt}}</text>
+        </view>
+      </view>
+      
+      <view wx:if="{{!hasMoreCommission && commissionList.length > 0}}" class="no-more">
+        <text>没有更多记录了</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 提现记录列表 -->
+  <view wx:if="{{activeTab === 2}}" class="cashout-list">
+    <view class="list-header">
+      <text class="header-title">提现记录</text>
+      <button class="apply-btn" bindtap="onShowCashoutModal">申请提现</button>
+    </view>
+    
+    <view wx:if="{{cashoutList.length === 0}}" class="empty-state">
+      <image src="/images/empty-state.png" mode="aspectFit"></image>
+      <text>暂无提现记录</text>
+    </view>
+    
+    <view wx:else class="list-container">
+      <view wx:for="{{cashoutList}}" wx:key="id" class="cashout-item">
+        <view class="item-header">
+          <text class="amount">¥{{item.amount}}</text>
+          <text class="status {{item.status === 1 ? 'approved' : item.status === 2 ? 'rejected' : item.status === 3 ? 'completed' : 'pending'}}">
+            {{item.statusText}}
+          </text>
+        </view>
+        <view class="item-content">
+          <view class="method-info">
+            <text class="method">{{item.methodText}}</text>
+            <text class="account">{{item.account}}</text>
+          </view>
+          <text class="time">{{item.createdAt}}</text>
+        </view>
+        <view wx:if="{{item.remark}}" class="remark">
+          <text>备注：{{item.remark}}</text>
+        </view>
+      </view>
+      
+      <view wx:if="{{!hasMoreCashout && cashoutList.length > 0}}" class="no-more">
+        <text>没有更多记录了</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 提现申请弹窗 -->
+  <view wx:if="{{showCashoutModal}}" class="modal-overlay" bindtap="onHideCashoutModal">
+    <view class="modal-content" catchtap="stopPropagation">
+      <view class="modal-header">
+        <text class="modal-title">申请提现</text>
+        <text class="modal-close" bindtap="onHideCashoutModal">×</text>
+      </view>
+      
+      <view class="modal-body">
+        <view class="form-item">
+          <text class="form-label">提现金额</text>
+          <input 
+            class="form-input" 
+            type="digit" 
+            placeholder="请输入提现金额"
+            value="{{cashoutForm.amount}}"
+            data-field="amount"
+            bindinput="onCashoutFormInput"
+          />
+        </view>
+        
+        <view class="form-item">
+          <text class="form-label">提现方式</text>
+          <picker 
+            mode="selector" 
+            range="{{['微信', '支付宝', '银行卡']}}" 
+            range-key=""
+            value="{{cashoutForm.method === 'wechat' ? 0 : cashoutForm.method === 'alipay' ? 1 : 2}}"
+            data-field="method"
+            bindchange="onCashoutFormInput"
+          >
+            <view class="picker-value">
+              {{cashoutForm.method === 'wechat' ? '微信' : cashoutForm.method === 'alipay' ? '支付宝' : '银行卡'}}
+            </view>
+          </picker>
+        </view>
+        
+        <view class="form-item">
+          <text class="form-label">收款账户</text>
+          <input 
+            class="form-input" 
+            type="text" 
+            placeholder="请输入收款账户"
+            value="{{cashoutForm.account}}"
+            data-field="account"
+            bindinput="onCashoutFormInput"
+          />
+        </view>
+      </view>
+      
+      <view class="modal-footer">
+        <button class="btn-cancel" bindtap="onHideCashoutModal">取消</button>
+        <button class="btn-confirm" bindtap="onSubmitCashout">确认申请</button>
+      </view>
+    </view>
+  </view>
+</view>

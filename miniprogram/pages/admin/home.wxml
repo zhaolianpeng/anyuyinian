@@ -1,0 +1,104 @@
+<view class="admin-home-container">
+  <!-- 管理员信息头部 -->
+  <view class="admin-header">
+    <view class="admin-info">
+      <image class="admin-avatar" src="{{adminInfo.avatarUrl || '/images/default-avatar.png'}}" mode="aspectFill"></image>
+      <view class="admin-details">
+        <text class="admin-name">{{adminInfo.nickName || '管理员'}}</text>
+        <text class="admin-level">{{adminInfo.adminLevel === 2 ? '超级管理员' : '一级管理员'}}</text>
+      </view>
+    </view>
+    <view class="logout-btn" bindtap="onLogout">退出</view>
+  </view>
+
+  <!-- 统计数据 -->
+  <view class="stats-section">
+    <view class="stats-title">数据概览</view>
+    <view class="stats-grid">
+      <view class="stats-item">
+        <text class="stats-number">{{stats.totalUsers || 0}}</text>
+        <text class="stats-label">总用户数</text>
+      </view>
+      <view class="stats-item">
+        <text class="stats-number">{{stats.totalOrders || 0}}</text>
+        <text class="stats-label">总订单数</text>
+      </view>
+      <view class="stats-item">
+        <text class="stats-number">{{stats.todayOrders || 0}}</text>
+        <text class="stats-label">今日订单</text>
+      </view>
+      <view class="stats-item">
+        <text class="stats-number">¥{{stats.totalAmount || 0}}</text>
+        <text class="stats-label">总金额</text>
+      </view>
+      <view class="stats-item">
+        <text class="stats-number paid-amount">¥{{stats.paidAmount || 0}}</text>
+        <text class="stats-label">已支付金额</text>
+      </view>
+      <view class="stats-item">
+        <text class="stats-number unpaid-amount">¥{{stats.unpaidAmount || 0}}</text>
+        <text class="stats-label">待支付金额</text>
+      </view>
+      <view class="stats-item">
+        <text class="stats-number refund-amount">¥{{stats.refundAmount || 0}}</text>
+        <text class="stats-label">退款金额</text>
+      </view>
+      <view class="stats-item">
+        <text class="stats-number timeout-amount">¥{{stats.timeoutUnpaidAmount || 0}}</text>
+        <text class="stats-label">超时未支付金额</text>
+      </view>
+      <view class="stats-item">
+        <text class="stats-number waiting-consultations">{{stats.waitingConsultations || 0}}</text>
+        <text class="stats-label">待回复咨询</text>
+      </view>
+      <view class="stats-item">
+        <text class="stats-number total-consultations">{{stats.totalConsultations || 0}}</text>
+        <text class="stats-label">总咨询数</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 功能菜单 -->
+  <view class="menu-section">
+    <view class="menu-title">管理功能</view>
+    <view class="menu-grid">
+      <view class="menu-item" bindtap="onGoToOrders">
+        <view class="menu-icon">📋</view>
+        <text class="menu-text">订单管理</text>
+        <text class="menu-desc">查看和管理订单</text>
+      </view>
+      
+      <view class="menu-item" bindtap="onGoToUsers">
+        <view class="menu-icon">👥</view>
+        <text class="menu-text">用户管理</text>
+        <text class="menu-desc">查看和管理用户</text>
+      </view>
+      
+      <view class="menu-item" bindtap="onGoToAdmins" wx:if="{{adminInfo.adminLevel === 2}}">
+        <view class="menu-icon">👨‍💼</view>
+        <text class="menu-text">管理员管理</text>
+        <text class="menu-desc">设置下级管理员</text>
+      </view>
+      
+      <view class="menu-item" bindtap="onGoToServices">
+        <view class="menu-icon">🛍️</view>
+        <text class="menu-text">服务管理</text>
+        <text class="menu-desc">管理服务项目价格</text>
+      </view>
+      
+      <view class="menu-item" bindtap="onGoToConsultations">
+        <view class="menu-icon">💬</view>
+        <text class="menu-text">在线咨询</text>
+        <text class="menu-desc">回复用户咨询消息</text>
+        <view class="consultation-badge" wx:if="{{stats.waitingConsultations > 0}}">
+          <text class="badge-text">{{stats.waitingConsultations}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 加载状态 -->
+  <view class="loading" wx:if="{{loading}}">
+    <text>加载中...</text>
+  </view>
+</view> 

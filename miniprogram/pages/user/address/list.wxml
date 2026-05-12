@@ -1,0 +1,40 @@
+<!--pages/user/address/list.wxml-->
+<view class="container">
+  <!-- 顶部标题 -->
+  <view class="header">
+    <text class="title">我的地址</text>
+    <button class="add-btn" bindtap="addAddress">+ 新增地址</button>
+  </view>
+
+  <!-- 地址列表 -->
+  <view class="address-list" wx:if="{{addressList.length > 0}}">
+    <view class="address-item" wx:for="{{addressList}}" wx:key="id">
+      <view class="address-info" bindtap="selectAddress" data-address="{{item}}">
+        <view class="user-info">
+          <text class="name">{{item.name}}</text>
+          <text class="phone">{{item.phone}}</text>
+          <view class="default-tag" wx:if="{{item.isDefault}}">默认</view>
+        </view>
+        <view class="address-detail">
+          {{item.province}}{{item.city}}{{item.district}}{{item.address}}
+        </view>
+      </view>
+      <view class="address-actions">
+        <button class="action-btn edit" bindtap="editAddress" data-address="{{item}}">编辑</button>
+        <button class="action-btn delete" bindtap="deleteAddress" data-id="{{item.id}}">删除</button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 空状态 -->
+  <view class="empty-state" wx:if="{{addressList.length === 0}}">
+    <image class="empty-icon" src="/images/empty-state.png"></image>
+    <text class="empty-text">暂无地址信息</text>
+    <button class="add-btn" bindtap="addAddress">添加地址</button>
+  </view>
+
+  <!-- 加载状态 -->
+  <view class="loading" wx:if="{{loading}}">
+    <text>加载中...</text>
+  </view>
+</view>

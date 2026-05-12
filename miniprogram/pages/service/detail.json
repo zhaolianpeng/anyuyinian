@@ -1,0 +1,7 @@
+{
+  "usingComponents": {
+    "calendar-picker": "/components/calendar-picker/calendar-picker"
+  },
+  "disableSwipeBack": true,
+  "enablePullDownRefresh": false
+}

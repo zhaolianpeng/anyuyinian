@@ -1,0 +1,85 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/login/login",
+    "pages/order/order",
+    "pages/promoter/home",
+    "pages/user/profile",
+    "pages/service/list",
+    "pages/service/detail",
+    "pages/order/list",
+    "pages/order/detail",
+    "pages/user/address/list",
+    "pages/user/address/add",
+    "pages/user/patient/list",
+    "pages/user/patient/add",
+    "pages/user/setup-profile",
+    "pages/referral/center",
+    "pages/kefu/chat",
+    "pages/hospital/list",
+    "pages/hospital/detail",
+    "pages/webview/webview",
+    "pages/agreement/user-agreement",
+    "pages/agreement/privacy-policy",
+    "pages/test/network-test",
+    "pages/test/setup-profile-debug",
+    "pages/test/test-consultation",
+    "pages/consultation/consultation",
+    "pages/admin/login",
+    "pages/admin/home",
+    "pages/admin/orders",
+    "pages/admin/users",
+    "pages/admin/admins",
+    "pages/admin/services",
+    "pages/admin/consultation/list",
+    "pages/admin/consultation/chat"
+  ],
+  "window": {
+    "navigationBarTitleText": "安语颐年护理陪诊",
+    "navigationBarBackgroundColor": "#ffffff",
+    "navigationBarTextStyle": "black",
+    "backgroundColor": "#f5f5f5"
+  },
+  "tabBar": {
+    "color": "#999999",
+    "selectedColor": "#007aff",
+    "backgroundColor": "#ffffff",
+    "borderStyle": "black",
+    "list": [
+      {
+        "pagePath": "pages/index/index",
+        "text": "首页"
+      },
+      {
+        "pagePath": "pages/service/list",
+        "text": "服务"
+      },
+      {
+        "pagePath": "pages/order/list",
+        "text": "订单"
+      },
+      {
+        "pagePath": "pages/user/profile",
+        "text": "我的"
+      }
+    ]
+  },
+  "permission": {
+    "scope.userLocation": {
+      "desc": "您的位置信息用于为您就近安排服务点护工"
+    }
+  },
+  "requiredPrivateInfos": [
+    "getLocation"
+  ],
+  "requiredBackgroundModes": ["location"],
+  "style": "v2",
+  "sitemapLocation": "sitemap.json",
+  "networkTimeout": {
+    "request": 60000,
+    "connectSocket": 60000,
+    "uploadFile": 60000,
+    "downloadFile": 60000
+  },
+  "cloud": true
+}

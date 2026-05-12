@@ -1,0 +1,22 @@
+<view class="agreement-container">
+  <!-- 顶部导航栏 -->
+  <view class="header">
+    <view class="back-btn" bindtap="onBack">
+      <text class="back-icon">←</text>
+    </view>
+    <view class="title">{{title}}</view>
+    <view class="placeholder"></view>
+  </view>
+
+  <!-- 协议内容 -->
+  <scroll-view class="content-scroll" scroll-y="true" enhanced="true" show-scrollbar="true">
+    <view class="content">
+      <text class="agreement-text">{{content}}</text>
+    </view>
+  </scroll-view>
+
+  <!-- 底部操作栏 -->
+  <view class="footer">
+    <button class="agree-btn" bindtap="onAgree">我已阅读并同意</button>
+  </view>
+</view> 

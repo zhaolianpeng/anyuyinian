@@ -1,0 +1,62 @@
+<view class="admin-users-container">
+  <!-- 页面标题 -->
+  <view class="page-header">
+    <text class="page-title">用户管理</text>
+    <text class="page-subtitle">查看和管理用户信息</text>
+  </view>
+
+  <!-- 用户列表 -->
+  <view class="users-list">
+    <view class="user-item" wx:for="{{users}}" wx:key="userId">
+      <view class="user-info">
+        <image class="user-avatar" src="{{item.avatarUrl || '/images/default-avatar.png'}}" mode="aspectFill"></image>
+        <view class="user-details">
+          <text class="user-name">{{item.nickName || '未设置昵称'}}</text>
+          <text class="user-phone" wx:if="{{item.phone}}">{{item.phone}}</text>
+          <text class="user-phone" wx:else>未绑定手机号</text>
+          <text class="user-level">{{getAdminLevelText(item.adminLevel)}}</text>
+        </view>
+      </view>
+      
+      <view class="user-actions">
+        <button 
+          class="action-btn set-admin-btn" 
+          wx:if="{{item.adminLevel === 0}}"
+          bindtap="onSetAsAdmin" 
+          data-user-id="{{item.userId}}"
+        >
+          设为管理员
+        </button>
+        <button 
+          class="action-btn remove-admin-btn" 
+          wx:if="{{item.adminLevel > 0}}"
+          bindtap="onRemoveAdmin" 
+          data-user-id="{{item.userId}}"
+        >
+          取消管理员
+        </button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 空状态 -->
+  <view class="empty-state" wx:if="{{!loading && users.length === 0}}">
+    <image class="empty-icon" src="/images/empty-state.png" mode="aspectFit"></image>
+    <text class="empty-text">暂无用户数据</text>
+  </view>
+
+  <!-- 加载状态 -->
+  <view class="loading-state" wx:if="{{loading}}">
+    <text>加载中...</text>
+  </view>
+
+  <!-- 加载更多 -->
+  <view class="load-more" wx:if="{{!loading && hasMore && users.length > 0}}">
+    <text>上拉加载更多</text>
+  </view>
+
+  <!-- 没有更多 -->
+  <view class="no-more" wx:if="{{!loading && !hasMore && users.length > 0}}">
+    <text>没有更多数据了</text>
+  </view>
+</view> 

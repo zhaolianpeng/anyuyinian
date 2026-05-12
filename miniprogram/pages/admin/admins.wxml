@@ -1,0 +1,49 @@
+<view class="admins-container">
+  <!-- 页面标题 -->
+  <view class="page-header">
+    <text class="page-title">管理员管理</text>
+    <text class="page-desc">管理下级管理员权限</text>
+  </view>
+
+  <!-- 管理员列表 -->
+  <view class="admins-list" wx:if="{{admins.length > 0}}">
+    <view class="admin-item" wx:for="{{admins}}" wx:key="userId">
+      <view class="admin-info">
+        <image class="admin-avatar" src="{{item.avatarUrl || '/images/default-avatar.png'}}" mode="aspectFill"></image>
+        <view class="admin-details">
+          <text class="admin-name">{{item.nickName}}</text>
+          <text class="admin-level">{{getAdminLevelText(item.adminLevel)}}</text>
+          <text class="admin-phone" wx:if="{{item.phone}}">{{item.phone}}</text>
+          <text class="admin-time" wx:if="{{item.adminCreatedAt}}">成为管理员：{{item.formattedAdminTime}}</text>
+          <text class="admin-amount" wx:if="{{item.totalAmount > 0}}">推荐码下单总金额：¥{{item.totalAmount}}</text>
+        </view>
+      </view>
+      
+      <view class="admin-actions">
+        <button class="action-btn set-btn" bindtap="onSetAsAdmin" data-user-id="{{item.userId}}" wx:if="{{item.adminLevel === 0}}">
+          设为管理员
+        </button>
+        <button class="action-btn remove-btn" bindtap="onRemoveAdmin" data-user-id="{{item.userId}}" wx:if="{{item.adminLevel > 0}}">
+          取消权限
+        </button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 空状态 -->
+  <view class="empty-state" wx:if="{{!loading && admins.length === 0}}">
+    <image class="empty-icon" src="/images/empty-state.png" mode="aspectFit"></image>
+    <text class="empty-text">暂无管理员</text>
+    <text class="empty-desc">您还没有设置任何下级管理员</text>
+  </view>
+
+  <!-- 加载状态 -->
+  <view class="loading" wx:if="{{loading}}">
+    <text>加载中...</text>
+  </view>
+
+  <!-- 加载更多 -->
+  <view class="load-more" wx:if="{{!loading && hasMore && admins.length > 0}}">
+    <text>上拉加载更多</text>
+  </view>
+</view> 

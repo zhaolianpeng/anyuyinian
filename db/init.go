@@ -2,6 +2,7 @@ package db
 
 import (
 	"fmt"
+	"os"
 	"time"
 
 	"gorm.io/driver/mysql"
@@ -15,11 +16,15 @@ var dbInstance *gorm.DB
 func Init() error {
 
 	source := "%s:%s@tcp(%s)/%s?readTimeout=1500ms&writeTimeout=1500ms&charset=utf8&loc=Local&&parseTime=true"
-	// 微信云托管数据库配置
-	user := "root"
-	pwd := "bU4X6cFW"
-	addr := "10.3.110.11:3306"
-	dataBase := "anyuyinian"
+	// 默认保留现有云托管配置，服务器部署时优先读取环境变量。
+	user := getEnv("DB_USER", "root")
+	pwd := getEnv("DB_PASSWORD", "bU4X6cFW")
+	addr := getEnv("DB_ADDR", getEnv("DB_HOST", "10.3.110.11:3306"))
+	dataBase := getEnv("DB_NAME", "anyuyinian")
+	if host := os.Getenv("DB_HOST"); host != "" && os.Getenv("DB_ADDR") == "" {
+		port := getEnv("DB_PORT", "3306")
+		addr = fmt.Sprintf("%s:%s", host, port)
+	}
 	if dataBase == "" {
 		dataBase = "anyuyinian"
 	}
@@ -57,4 +62,11 @@ func Init() error {
 // Get ...
 func Get() *gorm.DB {
 	return dbInstance
+}
+
+func getEnv(key, defaultValue string) string {
+	if value := os.Getenv(key); value != "" {
+		return value
+	}
+	return defaultValue
 }

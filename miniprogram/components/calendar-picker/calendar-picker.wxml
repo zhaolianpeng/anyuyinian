@@ -1,0 +1,68 @@
+<!--components/calendar-picker/calendar-picker.wxml-->
+<view class="calendar-picker {{show ? 'show' : ''}}" bindtap="hide">
+  <view class="calendar-content" catchtap="preventBubble">
+    <!-- 头部 -->
+    <view class="calendar-header">
+      <view class="header-title">选择预约时间</view>
+      <view class="header-close" bindtap="hide">×</view>
+    </view>
+
+    <!-- 月份导航 -->
+    <view class="month-nav">
+      <view class="nav-btn {{canPrevMonth ? '' : 'disabled'}}" 
+            bindtap="prevMonth">
+        <text class="nav-arrow">‹</text>
+      </view>
+      <view class="month-title">{{currentMonth}}</view>
+      <view class="nav-btn {{canNextMonth ? '' : 'disabled'}}" 
+            bindtap="nextMonth">
+        <text class="nav-arrow">›</text>
+      </view>
+    </view>
+
+    <!-- 星期标题 -->
+    <view class="week-header">
+      <view class="week-day" wx:for="{{['日', '一', '二', '三', '四', '五', '六']}}" wx:key="*this">
+        {{item}}
+      </view>
+    </view>
+
+    <!-- 日历网格 -->
+    <view class="calendar-grid">
+      <view class="calendar-week" wx:for="{{calendarDays}}" wx:key="weekIndex" wx:for-index="weekIndex">
+        <view class="calendar-day {{item.isCurrentMonth ? '' : 'other-month'}} {{item.isToday ? 'today' : ''}} {{item.isDisabled ? 'disabled' : ''}} {{item.isSelected ? 'selected' : ''}}"
+              wx:for="{{item}}" 
+              wx:key="date"
+              data-date="{{item.date}}"
+              data-is-disabled="{{item.isDisabled}}"
+              bindtap="selectDate">
+          <text class="day-number">{{item.day}}</text>
+          <view wx:if="{{item.isSelected}}" class="selected-indicator"></view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 时间选择 -->
+    <view class="time-section" wx:if="{{selectedDate}}">
+      <view class="time-title">选择时间 ({{selectedDate}})</view>
+      <view class="time-grid">
+        <view class="time-slot {{selectedTime === item.time ? 'selected' : ''}}"
+              wx:for="{{timeSlots}}" 
+              wx:key="time"
+              data-time="{{item.time}}"
+              bindtap="selectTime">
+          {{item.label}}
+        </view>
+      </view>
+      <view wx:if="{{timeSlots.length === 0}}" class="no-time-slots">
+        <text>暂无可用时间</text>
+      </view>
+    </view>
+
+    <!-- 底部按钮 -->
+    <view class="calendar-footer">
+      <view class="btn btn-cancel" bindtap="cancel">取消</view>
+      <view class="btn btn-confirm" bindtap="confirmSelection">确认</view>
+    </view>
+  </view>
+</view> 

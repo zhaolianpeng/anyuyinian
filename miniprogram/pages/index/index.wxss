@@ -1,0 +1,880 @@
+/* 全局样式 */
+page {
+  background-color: #f8f9fa;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* 加载状态 */
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background-color: #f8f9fa;
+}
+
+.loading {
+  color: #007bff;
+  font-size: 16px;
+}
+
+
+/* 错误提示 */
+.error-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  padding: 20px;
+  background-color: #f8f9fa;
+}
+
+.error-content {
+  text-align: center;
+}
+
+.error-image {
+  width: 120px;
+  height: 120px;
+  margin-bottom: 20px;
+}
+
+.error-title {
+  display: block;
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 10px;
+}
+
+.error-desc {
+  display: block;
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 20px;
+}
+
+.retry-btn {
+  background: linear-gradient(135deg, #007bff, #0056b3);
+  color: white;
+  border: none;
+  border-radius: 25px;
+  padding: 12px 30px;
+  font-size: 16px;
+}
+
+/* 首页容器 */
+.home-container {
+  background-color: #ffffff;
+  min-height: 100vh;
+}
+
+
+
+
+
+
+/* 轮播Banner */
+.banner-swiper {
+  height: 200px;
+  margin: 20px;
+  border-radius: 20px;
+  overflow: hidden;
+}
+
+/* 主横幅 */
+.main-banner {
+  position: relative;
+  height: 100%;
+  border-radius: 20px;
+  overflow: hidden;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  min-height: 200px;
+}
+
+.main-banner-image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.main-banner-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(0, 0, 0, 0.22) 0%, rgba(0, 0, 0, 0.1) 100%);
+}
+
+/* 视频Banner */
+.video-banner {
+  position: relative;
+  height: 100%;
+  border-radius: 20px;
+  overflow: hidden;
+  background: #000;
+}
+
+.video-poster-image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* 视频加载状态 */
+.video-loading {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  color: #666;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #e9ecef;
+  border-top: 3px solid #007bff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 10px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.loading-text {
+  font-size: 14px;
+  color: #666;
+}
+
+/* 视频错误状态 */
+.video-error {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+}
+
+.error-icon {
+  font-size: 24px;
+  margin-bottom: 10px;
+}
+
+.error-text {
+  font-size: 14px;
+  margin-bottom: 15px;
+}
+
+.retry-btn {
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 20px;
+  padding: 8px 16px;
+  font-size: 12px;
+}
+
+/* 降级模式样式 */
+.fallback-banner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: 20px;
+  overflow: hidden;
+}
+
+.fallback-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.fallback-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.1) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.fallback-text {
+  text-align: center;
+  color: white;
+  padding: 20px;
+}
+
+.fallback-title {
+  display: block;
+  font-size: 22px;
+  font-weight: 700;
+  margin-bottom: 10px;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.7);
+}
+
+.fallback-subtitle {
+  display: block;
+  font-size: 16px;
+  margin-bottom: 25px;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.7);
+  opacity: 0.9;
+}
+
+.fallback-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 5px;
+}
+
+.retry-video-btn {
+  background: rgba(255,255,255,0.25);
+  color: white;
+  border: 1px solid rgba(255,255,255,0.4);
+  border-radius: 25px;
+  padding: 10px 20px;
+  font-size: 13px;
+  font-weight: 500;
+  backdrop-filter: blur(15px);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+.contact-btn {
+  background: rgba(40, 167, 69, 0.9);
+  color: white;
+  border: 1px solid rgba(255,255,255,0.3);
+  border-radius: 25px;
+  padding: 10px 20px;
+  font-size: 13px;
+  font-weight: 500;
+  backdrop-filter: blur(15px);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+.banner-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  background-color: #000;
+}
+
+.video-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.1) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.video-text {
+  text-align: center;
+  color: white;
+}
+
+.video-title {
+  display: block;
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+}
+
+.video-subtitle {
+  display: block;
+  font-size: 16px;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+}
+
+/* 调试按钮样式 */
+.debug-btn {
+  background: rgba(255, 0, 0, 0.8);
+  color: white;
+  border: none;
+  border-radius: 15px;
+  padding: 4px 8px;
+  font-size: 10px;
+  margin-top: 10px;
+  opacity: 0.9;
+}
+
+.banner-content {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 30px 25px;
+}
+
+.banner-text {
+  flex: 1;
+}
+
+.banner-title {
+  display: block;
+  font-size: 20px;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 8px;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+}
+
+.banner-subtitle {
+  display: block;
+  font-size: 16px;
+  color: rgba(255, 255, 255, 0.92);
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.banner-phone-btn {
+  background: linear-gradient(135deg, #28a745, #20c997);
+  color: white;
+  border: none;
+  border-radius: 25px;
+  padding: 12px 20px;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.phone-icon {
+  font-size: 16px;
+}
+
+
+
+/* 快速服务入口 */
+.quick-service {
+  display: flex;
+  gap: 15px;
+  padding: 0 20px 20px;
+}
+
+.service-card {
+  flex: 1;
+  background-color: #ffffff;
+  border-radius: 15px;
+  padding: 20px;
+  text-align: center;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  border: 1px solid #f0f0f0;
+}
+
+.service-icon {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 30px;
+  margin: 0 auto 15px;
+}
+
+.appointment-icon {
+  background: linear-gradient(135deg, #007bff, #0056b3);
+  color: white;
+}
+
+.consultation-icon {
+  background: linear-gradient(135deg, #28a745, #20c997);
+  color: white;
+}
+
+.service-title {
+  display: block;
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 8px;
+}
+
+.service-desc {
+  display: block;
+  font-size: 12px;
+  color: #666;
+}
+
+/* 服务分类标签 */
+.service-tabs {
+  display: flex;
+  padding: 0 20px 20px;
+  gap: 15px;
+}
+
+.tab-item {
+  flex: 1;
+  text-align: center;
+  padding: 12px 0;
+  border-radius: 20px;
+  background-color: #f8f9fa;
+  color: #666;
+  font-size: 14px;
+  transition: all 0.3s ease;
+}
+
+.tab-item.active {
+  background: linear-gradient(135deg, #28a745, #20c997);
+  color: white;
+  font-weight: 600;
+}
+
+/* 服务列表 */
+.service-list {
+  padding: 0 20px 20px;
+}
+
+.loading-services {
+  text-align: center;
+  padding: 40px 20px;
+  color: #666;
+  font-size: 14px;
+}
+
+.no-services {
+  text-align: center;
+  padding: 40px 20px;
+  color: #999;
+  font-size: 14px;
+}
+
+.service-item {
+  display: flex;
+  flex-direction: column;
+  background-color: #ffffff;
+  border-radius: 15px;
+  margin-bottom: 15px;
+  overflow: hidden;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  border: 1px solid #f0f0f0;
+}
+
+.service-image-container {
+  width: 100%;
+  height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f8f9fa;
+  overflow: hidden;
+}
+
+.service-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+}
+
+.service-info {
+  flex: 1;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 120px;
+}
+
+.service-name {
+  display: block;
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 5px;
+}
+
+.service-description {
+  display: block;
+  font-size: 12px;
+  color: #666;
+  margin-bottom: 10px;
+}
+
+.service-price {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  margin-bottom: 10px;
+}
+
+.price-symbol {
+  font-size: 14px;
+  color: #ff6b35;
+}
+
+.price-amount {
+  font-size: 20px;
+  font-weight: 700;
+  color: #ff6b35;
+}
+
+.price-unit {
+  font-size: 12px;
+  color: #999;
+}
+
+.book-btn {
+  align-self: flex-end;
+  background: linear-gradient(135deg, #28a745, #20c997);
+  color: white;
+  border: none;
+  border-radius: 20px;
+  padding: 10px 20px;
+  font-size: 14px;
+  margin-top: 10px;
+}
+
+/* 全部服务按钮 */
+.all-services-btn {
+  margin: 0 20px 20px;
+  background: linear-gradient(135deg, #28a745, #20c997);
+  color: white;
+  border: none;
+  border-radius: 25px;
+  padding: 15px;
+  text-align: center;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+/* 紧急需求服务 */
+.urgent-service {
+  margin: 20px;
+  background-color: #ffffff;
+  border-radius: 20px;
+  padding: 25px;
+  box-shadow: 0 2px 15px rgba(0, 0, 0, 0.1);
+  border: 1px solid #f0f0f0;
+}
+
+.urgent-header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.urgent-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+}
+
+.urgent-main {
+  text-align: center;
+  margin-bottom: 25px;
+}
+
+.urgent-number {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.number-label {
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 5px;
+}
+
+.number-value {
+  font-size: 48px;
+  font-weight: 700;
+  color: #28a745;
+  margin-bottom: 5px;
+}
+
+.number-desc {
+  font-size: 16px;
+  color: #333;
+}
+
+.urgent-process {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+  margin-bottom: 25px;
+  flex-wrap: wrap;
+}
+
+.process-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.step-number {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #28a745, #20c997);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.step-text {
+  font-size: 12px;
+  color: #666;
+  max-width: 80px;
+}
+
+.process-arrow {
+  color: #28a745;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.urgent-book-btn {
+  width: 100%;
+  background: linear-gradient(135deg, #28a745, #20c997);
+  color: white;
+  border: none;
+  border-radius: 25px;
+  padding: 15px;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+/* 平台保障 */
+.platform-guarantee {
+  margin: 20px;
+  background-color: #ffffff;
+  border-radius: 20px;
+  padding: 25px;
+  box-shadow: 0 2px 15px rgba(0, 0, 0, 0.1);
+  border: 1px solid #f0f0f0;
+}
+
+.guarantee-header {
+  text-align: center;
+  margin-bottom: 25px;
+}
+
+.guarantee-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+  line-height: 1.4;
+}
+
+.guarantee-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.guarantee-item {
+  text-align: center;
+}
+
+.guarantee-icon {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background-color: #f8f9fa;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  margin: 0 auto 10px;
+}
+
+.guarantee-text {
+  font-size: 12px;
+  color: #666;
+  line-height: 1.3;
+}
+
+.guarantee-tree {
+  text-align: center;
+  font-size: 30px;
+  color: #28a745;
+}
+
+/* 透明度说明 */
+.transparency-section {
+  display: flex;
+  margin: 20px;
+  background-color: #ffffff;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 2px 15px rgba(0, 0, 0, 0.1);
+  border: 1px solid #f0f0f0;
+}
+
+.transparency-image {
+  width: 80px;
+  height: 80px;
+  flex-shrink: 0;
+}
+
+.transparency-content {
+  flex: 1;
+  padding: 20px;
+}
+
+.transparency-title {
+  display: block;
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 8px;
+}
+
+.transparency-desc {
+  display: block;
+  font-size: 12px;
+  color: #666;
+  line-height: 1.4;
+}
+
+/* 公司历程 */
+.company-history {
+  margin: 20px;
+  background-color: #ffffff;
+  border-radius: 20px;
+  padding: 25px;
+  box-shadow: 0 2px 15px rgba(0, 0, 0, 0.1);
+  border: 1px solid #f0f0f0;
+}
+
+.history-header {
+  text-align: center;
+  margin-bottom: 25px;
+}
+
+.history-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+  line-height: 1.4;
+}
+
+
+
+.history-content {
+  text-align: center;
+}
+
+.history-content text {
+  font-size: 14px;
+  color: #666;
+  line-height: 1.6;
+}
+
+/* 集团背书 */
+.group-endorsement {
+  margin: 20px;
+  background-color: #ffffff;
+  border-radius: 20px;
+  padding: 25px;
+  box-shadow: 0 2px 15px rgba(0, 0, 0, 0.1);
+  border: 1px solid #f0f0f0;
+}
+
+.endorsement-header {
+  text-align: center;
+  margin-bottom: 25px;
+}
+
+.endorsement-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+}
+
+.endorsement-logos {
+  display: flex;
+  justify-content: center;
+  gap: 30px;
+  margin-bottom: 25px;
+}
+
+.logo-item {
+  background: linear-gradient(135deg, #007bff, #0056b3);
+  color: white;
+  padding: 15px 25px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.endorsement-content {
+  text-align: center;
+}
+
+.endorsement-content text {
+  font-size: 14px;
+  color: #666;
+  line-height: 1.6;
+}
+
+/* 客服热线 */
+.service-hotline {
+  margin: 20px;
+  background: linear-gradient(135deg, #28a745, #20c997);
+  color: white;
+  border: none;
+  border-radius: 25px;
+  padding: 20px;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.hotline-icon {
+  font-size: 20px;
+}
+
+/* 响应式设计 */
+@media (max-width: 375px) {
+  .quick-service {
+    flex-direction: column;
+  }
+  
+  .urgent-process {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .process-arrow {
+    transform: rotate(90deg);
+  }
+}

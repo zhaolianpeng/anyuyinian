@@ -1,0 +1,217 @@
+<!--pages/order/order.wxml-->
+<view class="container">
+  <!-- 服务信息 -->
+  <view class="service-info" wx:if="{{serviceInfo}}">
+    <image class="service-image" src="{{serviceInfo.imageUrl}}" mode="aspectFill"></image>
+    <view class="service-details">
+      <text class="service-name">{{serviceInfo.name}}</text>
+      <text class="service-price">¥{{serviceInfo.price}}</text>
+      <text class="service-desc">{{serviceInfo.description}}</text>
+    </view>
+  </view>
+
+  <!-- 患者信息 -->
+  <view class="section">
+    <view class="section-header">
+      <text class="section-title">患者信息</text>
+      <text class="required">*</text>
+    </view>
+    
+    <!-- 调试信息 -->
+    <view class="debug-info">
+      <text>调试信息：患者数量 {{patientList.length || 0}}，地址数量 {{addressList.length || 0}}</text>
+    </view>
+    
+    <view class="patient-section" wx:if="{{patientList && patientList.length > 0}}">
+      <view class="patient-list">
+        <view class="patient-item {{selectedPatient && selectedPatient.id === item.id ? 'selected' : ''}}" 
+              wx:for="{{patientList}}" 
+              wx:key="id"
+              bindtap="selectPatient"
+              data-patient="{{item}}">
+          <view class="patient-info">
+            <text class="patient-name">{{item.name}}</text>
+            <text class="patient-gender">{{item.gender === 1 ? '男' : item.gender === 2 ? '女' : '未知'}}</text>
+            <text class="patient-age">{{item.birthday ? getAge(item.birthday) + '岁' : ''}}</text>
+            <text class="patient-relation">{{item.relation || '本人'}}</text>
+            <text class="patient-phone">{{item.phone}}</text>
+          </view>
+          <view class="patient-actions">
+            <view class="default-tag" wx:if="{{item.isDefault === 1}}">默认</view>
+            <view class="check-icon" wx:if="{{selectedPatient && selectedPatient.id === item.id}}">✓</view>
+          </view>
+        </view>
+      </view>
+      <view class="add-more-section">
+        <button class="add-more-btn" bindtap="addPatient">添加患者</button>
+      </view>
+    </view>
+    
+    <view class="empty-state" wx:else>
+      <text class="empty-text">暂无患者信息</text>
+      <button class="add-btn" bindtap="addPatient">添加患者</button>
+    </view>
+  </view>
+
+  <!-- 服务地址 -->
+  <view class="section">
+    <view class="section-header">
+      <text class="section-title">服务地址</text>
+      <text class="required">*</text>
+    </view>
+    
+    <view class="address-section" wx:if="{{addressList && addressList.length > 0}}">
+      <view class="address-list">
+        <view class="address-item {{selectedAddress && selectedAddress.id === item.id ? 'selected' : ''}}" 
+              wx:for="{{addressList}}" 
+              wx:key="id"
+              bindtap="selectAddress"
+              data-address="{{item}}">
+          <view class="address-info">
+            <view class="address-user">
+              <text class="address-name">{{item.name}}</text>
+              <text class="address-phone">{{item.phone}}</text>
+            </view>
+            <text class="address-detail">{{item.province}}{{item.city}}{{item.district}}{{item.address}}</text>
+          </view>
+          <view class="address-actions">
+            <view class="default-tag" wx:if="{{item.isDefault === 1}}">默认</view>
+            <view class="check-icon" wx:if="{{selectedAddress && selectedAddress.id === item.id}}">✓</view>
+          </view>
+        </view>
+      </view>
+      <view class="add-more-section">
+        <button class="add-more-btn" bindtap="addAddress">添加地址</button>
+      </view>
+    </view>
+    
+    <view class="empty-state" wx:else>
+      <text class="empty-text">暂无地址信息</text>
+      <button class="add-btn" bindtap="addAddress">添加地址</button>
+    </view>
+  </view>
+
+  <!-- 预约信息 -->
+  <view class="section">
+    <view class="section-header">
+      <text class="section-title">预约信息</text>
+      <text class="required">*</text>
+    </view>
+    
+    <view class="appointment-section">
+      <!-- 预约时间选择 -->
+      <view class="datetime-section">
+        <text class="label">预约时间</text>
+        <view class="datetime-picker" bindtap="showCalendarPicker">
+          <text wx:if="{{formData.appointmentDate && formData.appointmentTime}}">
+            {{formData.appointmentDate}} {{formData.appointmentTime}}
+          </text>
+          <text wx:else class="placeholder">请选择预约时间</text>
+          <view class="picker-arrow">›</view>
+        </view>
+      </view>
+      
+      <!-- 患者性别 -->
+      <view class="info-section">
+        <text class="label">患者性别</text>
+        <text class="info-value" wx:if="{{selectedPatient}}">{{selectedPatient.gender === 1 ? '男' : selectedPatient.gender === 2 ? '女' : '未知'}}</text>
+        <text class="info-value" wx:else>请先选择患者</text>
+      </view>
+      
+      <!-- 患者年龄 -->
+      <view class="info-section">
+        <text class="label">患者年龄</text>
+        <text class="info-value" wx:if="{{selectedPatient}}">{{selectedPatient.birthday ? getAge(selectedPatient.birthday) + '岁' : '未知'}}</text>
+        <text class="info-value" wx:else>请先选择患者</text>
+      </view>
+      
+      <!-- 基础病信息 -->
+      <view class="disease-section">
+        <text class="label">基础病信息</text>
+        <textarea class="disease-input" 
+                  placeholder="请描述患者的基础病情况（选填）" 
+                  value="{{formData.diseaseInfo}}"
+                  bindinput="onDiseaseInput"
+                  maxlength="500"
+                  auto-height="true"></textarea>
+        <text class="char-count">{{formData.diseaseInfo.length || 0}}/500</text>
+      </view>
+      
+      <!-- 是否需要助排二便 -->
+      <view class="toilet-section">
+        <text class="label">是否需要助排二便</text>
+        <view class="radio-group">
+          <view class="radio-item {{formData.needToiletAssist === '1' ? 'selected' : ''}}" 
+                bindtap="onToiletAssistChange" 
+                data-value="1">
+            <view class="radio-icon">{{formData.needToiletAssist === '1' ? '●' : '○'}}</view>
+            <text class="radio-text">需要</text>
+          </view>
+          <view class="radio-item {{formData.needToiletAssist === '0' ? 'selected' : ''}}" 
+                bindtap="onToiletAssistChange" 
+                data-value="0">
+            <view class="radio-icon">{{formData.needToiletAssist === '0' ? '●' : '○'}}</view>
+            <text class="radio-text">不需要</text>
+          </view>
+        </view>
+      </view>
+      
+      <!-- 时间范围提示 -->
+      <view class="time-hint">
+        <text class="hint-text">可预约时间：明天开始，未来7天内</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 备注信息 -->
+  <view class="section">
+    <view class="section-header">
+      <text class="section-title">备注信息</text>
+    </view>
+    
+    <view class="remark-section">
+      <textarea class="remark-input" 
+                placeholder="请输入备注信息（选填）" 
+                value="{{formData.remark}}"
+                bindinput="onRemarkInput"
+                bindblur="onRemarkBlur"
+                maxlength="200"
+                auto-height="true"></textarea>
+      <text class="char-count">{{formData.remark.length || 0}}/200</text>
+    </view>
+  </view>
+
+  <!-- 订单金额 -->
+  <view class="order-amount">
+    <text class="amount-label">订单金额</text>
+    <text class="amount-value">¥{{serviceInfo.price || 0}}</text>
+  </view>
+
+  <!-- 调试按钮 -->
+  <view class="debug-section">
+    <button bindtap="debugData">调试数据</button>
+    <button bindtap="testMockData">测试模拟数据</button>
+    <button bindtap="addPatient">添加患者</button>
+    <button bindtap="addAddress">添加地址</button>
+  </view>
+
+  <!-- 提交按钮 -->
+  <view class="submit-section">
+    <button class="submit-btn" 
+            bindtap="submitOrder" 
+            loading="{{loading}}"
+            disabled="{{!canSubmit}}">
+      提交订单
+    </button>
+  </view>
+
+  <!-- 日历时间选择器 -->
+  <calendar-picker 
+    show="{{showCalendarPicker}}"
+    minDate="{{minDate}}"
+    maxDate="{{maxDate}}"
+    selectedDateTime="{{formData.appointmentDate}} {{formData.appointmentTime}}"
+    bind:confirm="onCalendarConfirm"
+    bind:close="onCalendarClose">
+  </calendar-picker>
+</view>

@@ -1,0 +1,21 @@
+<view class="debug-container">
+  <view class="header">
+    <text class="title">设置页面调试</text>
+  </view>
+
+  <view class="debug-content">
+    <view class="debug-info">
+      <text class="debug-title">调试信息：</text>
+      <scroll-view class="debug-text" scroll-y="true">
+        <text>{{debugInfo}}</text>
+      </scroll-view>
+    </view>
+
+    <view class="action-buttons">
+      <button class="test-btn" bindtap="testWxAPI">测试微信API</button>
+      <button class="test-btn" bindtap="testBackendAPI">测试后端API</button>
+      <button class="test-btn" bindtap="clearDebugInfo">清除调试信息</button>
+      <button class="test-btn" bindtap="copyDebugInfo">复制调试信息</button>
+    </view>
+  </view>
+</view> 

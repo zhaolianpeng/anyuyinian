@@ -6,6 +6,8 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"strconv"
+	"strings"
 	"time"
 )
 
@@ -17,6 +19,7 @@ type LogMiddleware struct {
 // NewLogMiddleware 创建日志中间件
 func NewLogMiddleware(handler http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		r = applyMethodOverride(r)
 		startTime := time.Now()
 
 		// 记录请求开始
@@ -57,6 +60,57 @@ func NewLogMiddleware(handler http.HandlerFunc) http.HandlerFunc {
 		log.Printf("[API] 响应体: %s", responseRecorder.body.String())
 		log.Printf("[API] 请求处理完成，耗时: %v", duration)
 	}
+}
+
+func applyMethodOverride(r *http.Request) *http.Request {
+	if r.Method != http.MethodPost || !strings.EqualFold(r.Header.Get("X-HTTP-Method-Override"), http.MethodGet) {
+		return r
+	}
+
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		log.Printf("[API] 读取覆盖请求体失败: %v", err)
+		r.Body = io.NopCloser(bytes.NewReader(nil))
+		return r
+	}
+
+	r.Body = io.NopCloser(bytes.NewReader(body))
+	trimmed := strings.TrimSpace(string(body))
+	if trimmed == "" {
+		r.Method = http.MethodGet
+		return r
+	}
+
+	params := map[string]interface{}{}
+	if err := json.Unmarshal(body, &params); err != nil {
+		log.Printf("[API] 解析覆盖请求体失败: %v", err)
+		return r
+	}
+
+	query := r.URL.Query()
+	for key, value := range params {
+		switch typed := value.(type) {
+		case string:
+			query.Set(key, typed)
+		case float64:
+			query.Set(key, strconv.FormatFloat(typed, 'f', -1, 64))
+		case bool:
+			query.Set(key, strconv.FormatBool(typed))
+		case nil:
+			continue
+		default:
+			encoded, err := json.Marshal(typed)
+			if err == nil {
+				query.Set(key, string(encoded))
+			}
+		}
+	}
+
+	r.Method = http.MethodGet
+	r.URL.RawQuery = query.Encode()
+	r.Body = io.NopCloser(bytes.NewReader(body))
+	r.ContentLength = int64(len(body))
+	return r
 }
 
 // ResponseRecorder 响应记录器

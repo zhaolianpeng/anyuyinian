@@ -1,0 +1,486 @@
+/* pages/promoter/home.wxss */
+.container {
+  min-height: 100vh;
+  background-color: #f5f5f5;
+}
+
+/* 加载状态 */
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 200rpx;
+  color: #999;
+}
+
+/* 推广信息 */
+.promoter-info {
+  background-color: #fff;
+  margin-bottom: 20rpx;
+}
+
+/* 用户信息卡片 */
+.user-card {
+  display: flex;
+  align-items: center;
+  padding: 30rpx;
+  border-bottom: 1rpx solid #f0f0f0;
+}
+
+.avatar {
+  width: 120rpx;
+  height: 120rpx;
+  border-radius: 60rpx;
+  margin-right: 30rpx;
+}
+
+.user-info {
+  flex: 1;
+}
+
+.nickname {
+  display: block;
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 10rpx;
+}
+
+.promoter-id {
+  display: block;
+  font-size: 28rpx;
+  color: #666;
+}
+
+.copy-btn {
+  padding: 10rpx 20rpx;
+  font-size: 24rpx;
+  color: #007aff;
+  background: none;
+  border: 1rpx solid #007aff;
+  border-radius: 20rpx;
+}
+
+/* 统计数据 */
+.stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rpx;
+  background-color: #f0f0f0;
+  padding: 20rpx;
+}
+
+.stat-item {
+  background-color: #fff;
+  padding: 30rpx;
+  text-align: center;
+}
+
+.stat-value {
+  display: block;
+  font-size: 36rpx;
+  font-weight: bold;
+  color: #007aff;
+  margin-bottom: 10rpx;
+}
+
+.stat-label {
+  display: block;
+  font-size: 24rpx;
+  color: #999;
+}
+
+/* 推广二维码 */
+.qr-section {
+  padding: 30rpx;
+}
+
+.section-title {
+  display: block;
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 20rpx;
+}
+
+.qr-container {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 30rpx;
+}
+
+.qr-generate-btn {
+  width: 300rpx;
+  height: 300rpx;
+  border-radius: 20rpx;
+  overflow: hidden;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.qr-generate-btn:active {
+  transform: scale(0.95);
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.15);
+}
+
+.qr-code {
+  width: 100%;
+  height: 100%;
+}
+
+.qr-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  padding: 40rpx;
+  box-sizing: border-box;
+}
+
+.qr-text {
+  font-size: 32rpx;
+  font-weight: bold;
+  margin-bottom: 10rpx;
+  text-align: center;
+}
+
+.qr-desc {
+  font-size: 24rpx;
+  opacity: 0.8;
+  text-align: center;
+}
+
+.share-btn {
+  width: 100%;
+  height: 80rpx;
+  line-height: 80rpx;
+  background-color: #007aff;
+  color: #fff;
+  border-radius: 40rpx;
+  font-size: 32rpx;
+}
+
+/* 标签页 */
+.tabs {
+  display: flex;
+  background-color: #fff;
+  margin-bottom: 20rpx;
+}
+
+.tab-item {
+  flex: 1;
+  height: 80rpx;
+  line-height: 80rpx;
+  text-align: center;
+  font-size: 28rpx;
+  color: #666;
+  border-bottom: 4rpx solid transparent;
+}
+
+.tab-item.active {
+  color: #007aff;
+  border-bottom-color: #007aff;
+}
+
+/* 佣金记录列表 */
+.commission-list {
+  background-color: #fff;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 100rpx 0;
+}
+
+.empty-state image {
+  width: 200rpx;
+  height: 200rpx;
+  margin-bottom: 20rpx;
+}
+
+.empty-state text {
+  color: #999;
+  font-size: 28rpx;
+}
+
+.list-container {
+  padding: 0 30rpx;
+}
+
+.commission-item {
+  padding: 30rpx 0;
+  border-bottom: 1rpx solid #f0f0f0;
+}
+
+.commission-item:last-child {
+  border-bottom: none;
+}
+
+.item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20rpx;
+}
+
+.order-no {
+  font-size: 28rpx;
+  color: #333;
+}
+
+.status {
+  font-size: 24rpx;
+  padding: 4rpx 12rpx;
+  border-radius: 12rpx;
+}
+
+.status.pending {
+  background-color: #fff7e6;
+  color: #fa8c16;
+}
+
+.status.settled {
+  background-color: #f6ffed;
+  color: #52c41a;
+}
+
+.status.withdrawn {
+  background-color: #f0f0f0;
+  color: #999;
+}
+
+.item-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.amount-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.amount {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #007aff;
+  margin-bottom: 10rpx;
+}
+
+.rate {
+  font-size: 24rpx;
+  color: #999;
+}
+
+.time {
+  font-size: 24rpx;
+  color: #999;
+}
+
+.no-more {
+  text-align: center;
+  padding: 30rpx;
+  color: #999;
+  font-size: 24rpx;
+}
+
+/* 提现记录列表 */
+.cashout-list {
+  background-color: #fff;
+}
+
+.list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 30rpx;
+  border-bottom: 1rpx solid #f0f0f0;
+}
+
+.header-title {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #333;
+}
+
+.apply-btn {
+  padding: 10rpx 20rpx;
+  font-size: 24rpx;
+  color: #fff;
+  background-color: #007aff;
+  border-radius: 20rpx;
+}
+
+.cashout-item {
+  padding: 30rpx;
+  border-bottom: 1rpx solid #f0f0f0;
+}
+
+.cashout-item:last-child {
+  border-bottom: none;
+}
+
+.cashout-item .item-header {
+  padding: 0;
+  border-bottom: none;
+  margin-bottom: 20rpx;
+}
+
+.cashout-item .amount {
+  font-size: 36rpx;
+  font-weight: bold;
+  color: #007aff;
+}
+
+.status.approved {
+  background-color: #f6ffed;
+  color: #52c41a;
+}
+
+.status.rejected {
+  background-color: #fff2f0;
+  color: #ff4d4f;
+}
+
+.status.completed {
+  background-color: #f0f9ff;
+  color: #1890ff;
+}
+
+.method-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.method {
+  font-size: 28rpx;
+  color: #333;
+  margin-bottom: 10rpx;
+}
+
+.account {
+  font-size: 24rpx;
+  color: #666;
+}
+
+.remark {
+  margin-top: 20rpx;
+  padding: 20rpx;
+  background-color: #f5f5f5;
+  border-radius: 8rpx;
+}
+
+.remark text {
+  font-size: 24rpx;
+  color: #666;
+}
+
+/* 弹窗样式 */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  width: 600rpx;
+  background-color: #fff;
+  border-radius: 20rpx;
+  overflow: hidden;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 30rpx;
+  border-bottom: 1rpx solid #f0f0f0;
+}
+
+.modal-title {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #333;
+}
+
+.modal-close {
+  font-size: 40rpx;
+  color: #999;
+  line-height: 1;
+}
+
+.modal-body {
+  padding: 30rpx;
+}
+
+.form-item {
+  margin-bottom: 30rpx;
+}
+
+.form-label {
+  display: block;
+  font-size: 28rpx;
+  color: #333;
+  margin-bottom: 15rpx;
+}
+
+.form-input {
+  width: 100%;
+  height: 80rpx;
+  padding: 0 20rpx;
+  border: 1rpx solid #e0e0e0;
+  border-radius: 8rpx;
+  font-size: 28rpx;
+  box-sizing: border-box;
+}
+
+.picker-value {
+  width: 100%;
+  height: 80rpx;
+  line-height: 80rpx;
+  padding: 0 20rpx;
+  border: 1rpx solid #e0e0e0;
+  border-radius: 8rpx;
+  font-size: 28rpx;
+  color: #333;
+  background-color: #fff;
+}
+
+.modal-footer {
+  display: flex;
+  border-top: 1rpx solid #f0f0f0;
+}
+
+.btn-cancel,
+.btn-confirm {
+  flex: 1;
+  height: 100rpx;
+  line-height: 100rpx;
+  text-align: center;
+  font-size: 32rpx;
+  border: none;
+  border-radius: 0;
+}
+
+.btn-cancel {
+  background-color: #f5f5f5;
+  color: #666;
+}
+
+.btn-confirm {
+  background-color: #007aff;
+  color: #fff;
+} 

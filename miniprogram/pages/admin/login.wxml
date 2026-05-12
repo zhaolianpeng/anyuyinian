@@ -1,0 +1,90 @@
+<view class="admin-login-container">
+  <view class="login-header">
+    <image class="logo" src="/images/default-avatar.png" mode="aspectFit"></image>
+    <text class="title">管理员登录</text>
+    <text class="subtitle">请选择登录方式</text>
+  </view>
+
+  <!-- 超级管理员登录 -->
+  <view class="login-section">
+    <view class="section-title">
+      <text class="title-text">超级管理员登录</text>
+      <text class="title-desc">仅限anyuyinian账号</text>
+    </view>
+    
+    <view class="login-form">
+      <view class="form-item">
+        <view class="input-wrapper">
+          <text class="label">用户名</text>
+          <input 
+            class="input" 
+            placeholder="请输入超级管理员用户名" 
+            value="{{superUsername}}"
+            bindinput="onSuperUsernameInput"
+          />
+        </view>
+      </view>
+
+      <view class="form-item">
+        <view class="input-wrapper">
+          <text class="label">密码</text>
+          <input 
+            class="input" 
+            type="password" 
+            placeholder="请输入超级管理员密码" 
+            value="{{superPassword}}"
+            bindinput="onSuperPasswordInput"
+          />
+        </view>
+      </view>
+
+      <view class="login-btn-wrapper">
+        <button 
+          class="login-btn super-admin-btn {{loading ? 'loading' : ''}}" 
+          bindtap="onSuperAdminLogin"
+          disabled="{{loading}}"
+        >
+          <text wx:if="{{!loading}}">超级管理员登录</text>
+          <text wx:else>登录中...</text>
+        </button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 分割线 -->
+  <view class="divider">
+    <view class="divider-line"></view>
+    <text class="divider-text">或</text>
+    <view class="divider-line"></view>
+  </view>
+
+  <!-- 普通管理员登录 -->
+  <view class="login-section">
+    <view class="section-title">
+      <text class="title-text">普通管理员登录</text>
+      <text class="title-desc">使用微信账号登录</text>
+    </view>
+    
+    <view class="login-form">
+      <view class="login-btn-wrapper">
+        <button 
+          class="login-btn normal-admin-btn" 
+          bindtap="onNormalAdminLogin"
+        >
+          普通管理员登录
+        </button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 登录提示 -->
+  <view class="login-tips">
+    <text class="tip-text">超级管理员请联系系统管理员获取登录信息</text>
+    <text class="tip-text">普通管理员需要先被超级管理员设置为管理员</text>
+  </view>
+  
+  <!-- 底部取消/返回 -->
+  <view class="footer-actions">
+    <button class="cancel-btn" bindtap="onCancelTap">取消/返回</button>
+  </view>
+</view> 

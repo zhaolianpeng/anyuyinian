@@ -1,0 +1,65 @@
+<!--pages/kefu/chat.wxml-->
+<view class="container">
+  <!-- 聊天消息列表 -->
+  <scroll-view class="chat-list" scroll-y="true" scroll-into-view="{{scrollToView}}" scroll-with-animation="true">
+    <view class="message-list">
+      <view class="message-item {{item.type === 1 ? 'user' : 'kefu'}}" 
+            wx:for="{{messageList}}" 
+            wx:key="id"
+            id="msg-{{item.id}}">
+        <view class="avatar">
+          <image src="{{item.type === 1 ? (userInfo.avatarUrl || '/images/default-avatar.png') : '/images/default-avatar.png'}}"></image>
+        </view>
+        <view class="message-content">
+          <view class="message-bubble">
+            <text wx:if="{{item.type === 0}}">{{item.content}}</text>
+            <view wx:else>
+              <text>{{item.content}}</text>
+              <view class="image-list" wx:if="{{item.images && item.images.length > 0}}">
+                <image wx:for="{{item.images}}" 
+                       wx:key="*this" 
+                       wx:for-item="img" 
+                       src="{{img}}" 
+                       mode="aspectFill"
+                       bindtap="previewImage"
+                       data-urls="{{item.images}}"
+                       data-current="{{img}}"></image>
+              </view>
+            </view>
+          </view>
+          <view class="message-time">{{item.createTime}}</view>
+        </view>
+      </view>
+    </view>
+  </scroll-view>
+
+  <!-- 输入区域 -->
+  <view class="input-area">
+    <view class="input-container">
+      <view class="message-input-wrap">
+        <input class="message-input"
+               type="text"
+               value="{{inputMessage}}"
+               placeholder="请输入消息..."
+               maxlength="500"
+               confirm-type="send"
+               bindinput="onInputChange"
+               bindconfirm="sendMessage" />
+      </view>
+      <view class="input-actions">
+        <button class="send-btn {{canSend ? 'send-btn-active' : 'send-btn-disabled'}}" bindtap="sendMessage">发送</button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 快捷回复 -->
+  <view class="quick-reply" wx:if="{{showQuickReply}}">
+    <view class="quick-reply-list">
+      <button class="quick-reply-item" 
+              wx:for="{{quickReplies}}" 
+              wx:key="*this"
+              bindtap="selectQuickReply"
+              data-text="{{item}}">{{item}}</button>
+    </view>
+  </view>
+</view>

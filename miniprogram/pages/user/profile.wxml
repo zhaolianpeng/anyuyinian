@@ -1,0 +1,96 @@
+<view class="profile-container">
+  <!-- 登录门：未登录仅显示去登录按钮 -->
+  <view class="login-gate" wx:if="{{needLogin}}">
+    <button class="primary-login-btn" bindtap="onGoLogin">去登录</button>
+  </view>
+
+  <!-- 用户信息卡片 -->
+  <view class="user-card" bindtap="onSetupProfile" wx:if="{{!needLogin}}">
+    <view class="user-avatar">
+      <image src="{{userInfo.avatarUrl || '/images/default-avatar.png'}}" mode="aspectFill"></image>
+    </view>
+    <view class="user-info">
+      <text class="user-name">{{userInfo.nickName || '未设置昵称'}}</text>
+      <text class="user-phone" wx:if="{{userInfo.phone}}">{{userInfo.phone}}</text>
+      <text class="user-phone" wx:else>点击绑定手机号</text>
+    </view>
+    <view class="setup-btn" wx:if="{{!userInfo.nickName || !userInfo.phone}}">
+      完善资料
+    </view>
+  </view>
+
+  <!-- 功能菜单 -->
+  <view class="menu-list" wx:if="{{!needLogin}}">
+    <view class="menu-item" bindtap="onOrderList">
+      <view class="menu-icon">📋</view>
+      <view class="menu-content">
+        <text class="menu-title">我的订单</text>
+        <text class="menu-desc">查看订单状态</text>
+      </view>
+      <view class="menu-arrow">></view>
+    </view>
+
+    <view class="menu-item" bindtap="onAddressManage">
+      <view class="menu-icon">📍</view>
+      <view class="menu-content">
+        <text class="menu-title">地址管理</text>
+        <text class="menu-desc">管理收货地址</text>
+      </view>
+      <view class="menu-arrow">></view>
+    </view>
+
+    <view class="menu-item" bindtap="onPatientManage">
+      <view class="menu-icon">👤</view>
+      <view class="menu-content">
+        <text class="menu-title">患者管理</text>
+        <text class="menu-desc">管理患者信息</text>
+      </view>
+      <view class="menu-arrow">></view>
+    </view>
+
+    <view class="menu-item" bindtap="onReferralCenter">
+      <view class="menu-icon">🎯</view>
+      <view class="menu-content">
+        <text class="menu-title">推广中心</text>
+        <text class="menu-desc">推广赚佣金</text>
+      </view>
+      <view class="menu-arrow">></view>
+    </view>
+
+    <view class="menu-item" bindtap="onCustomerService">
+      <view class="menu-icon">💬</view>
+      <view class="menu-content">
+        <text class="menu-title">客服咨询</text>
+        <text class="menu-desc">在线客服</text>
+      </view>
+      <view class="menu-arrow">></view>
+    </view>
+
+    <view class="menu-item" bindtap="onAdminLogin" wx:if="{{!isAdmin}}">
+      <view class="menu-icon">🔐</view>
+      <view class="menu-content">
+        <text class="menu-title">管理员入口</text>
+        <text class="menu-desc">管理员登录</text>
+      </view>
+      <view class="menu-arrow">></view>
+    </view>
+    <view class="menu-item" bindtap="onGoAdminHome" wx:if="{{isAdmin}}">
+      <view class="menu-icon">🛡️</view>
+      <view class="menu-content">
+        <text class="menu-title">管理员中心</text>
+        <text class="menu-desc">进入后台管理</text>
+      </view>
+      <view class="menu-arrow">></view>
+    </view>
+  </view>
+
+  <!-- 退出登录 -->
+  <view class="logout-btn" bindtap="onLogout" wx:if="{{!needLogin}}">
+    退出登录
+  </view>
+
+  <!-- 加载状态 -->
+  <view class="loading" wx:if="{{loading}}">
+    <text>加载中...</text>
+  </view>
+</view> 

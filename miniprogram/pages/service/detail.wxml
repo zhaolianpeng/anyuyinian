@@ -1,0 +1,386 @@
+<!--pages/service/detail.wxml-->
+<view class="service-detail-container">
+  <!-- 服务基本信息 -->
+  <view class="service-header">
+    <image class="service-image" src="{{service.imageUrl}}" mode="aspectFill" />
+    <view class="service-info">
+      <text class="service-name">{{service.name}}</text>
+      <text class="service-description">{{service.description}}</text>
+      <view class="service-category">
+        <text class="category-tag">{{service.category}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 价格信息 -->
+  <view class="price-section">
+    <view class="price-info">
+      <text class="current-price">¥{{service.price}}</text>
+      <text class="original-price" wx:if="{{service.originalPrice > service.price}}">¥{{service.originalPrice}}</text>
+      <text class="discount" wx:if="{{service.originalPrice > service.price}}">
+        省¥{{service.originalPrice - service.price}}
+      </text>
+    </view>
+  </view>
+
+  <!-- 智慧养老设备视频播放 -->
+  <view class="video-section" wx:if="{{service.category === '智慧养老' && service.videoUrl}}">
+    <view class="section-title">产品介绍视频</view>
+    <video 
+      class="product-video" 
+      src="{{service.videoUrl}}" 
+      controls="{{true}}"
+      show-center-play-btn="{{true}}"
+      show-play-btn="{{true}}"
+      show-fullscreen-btn="{{true}}"
+      show-progress="{{true}}"
+      enable-progress-gesture="{{true}}"
+      object-fit="contain"
+    ></video>
+  </view>
+
+  <!-- 服务详情 -->
+  <view class="service-details">
+    <view class="section-title">服务详情</view>
+    <view class="detail-content">
+      <text class="detail-text">{{service.description}}</text>
+    </view>
+  </view>
+
+  <!-- 患者信息选择（智慧养老设备不显示） -->
+  <view class="patient-section" wx:if="{{service.category !== '智慧养老'}}">
+    <view class="section-title">患者信息</view>
+    <view class="patient-selector" bindtap="onShowPatientModal">
+      <view class="selector-content">
+        <view wx:if="{{selectedPatient}}" class="selected-info">
+          <text class="info-name">{{selectedPatient.name}}</text>
+          <text class="info-detail">{{selectedPatient.phone}} | {{selectedPatient.idCard}}</text>
+        </view>
+        <view wx:else class="placeholder">
+          <text class="placeholder-text">请选择患者</text>
+        </view>
+      </view>
+      <view class="selector-arrow">></view>
+    </view>
+    <view class="add-button" bindtap="onAddPatient">
+      <text class="add-text">+ 新增患者</text>
+    </view>
+  </view>
+
+  <!-- 地址选择 -->
+  <view class="address-section">
+    <view class="section-title">{{service.category === '智慧养老' ? '收货地址' : '服务地址'}}</view>
+    <view class="address-selector" bindtap="onShowAddressModal">
+      <view class="selector-content">
+        <view wx:if="{{selectedAddress}}" class="selected-info">
+          <text class="info-name">{{selectedAddress.name}} {{selectedAddress.phone}}</text>
+          <text class="info-detail">{{selectedAddress.province}}{{selectedAddress.city}}{{selectedAddress.district}}{{selectedAddress.address}}</text>
+        </view>
+        <view wx:else class="placeholder">
+          <text class="placeholder-text">{{service.category === '智慧养老' ? '请选择收货地址' : '请选择服务地址'}}</text>
+        </view>
+      </view>
+      <view class="selector-arrow">></view>
+    </view>
+    <view class="add-button" bindtap="onAddAddress">
+      <text class="add-text">+ 新增地址</text>
+    </view>
+  </view>
+
+  <!-- 预约表单（智慧养老设备不显示） -->
+  <view class="booking-form" wx:if="{{service.category !== '智慧养老'}}">
+    <view class="section-title">预约信息</view>
+    
+    <form bindsubmit="onSubmitBooking">
+      <view class="form-content">
+        <!-- 患者性别 -->
+        <view class="form-item">
+          <view class="form-label">
+            <text class="label-text">患者性别</text>
+          </view>
+          <view class="info-display">
+            <text class="info-text" wx:if="{{selectedPatient}}">
+              {{selectedPatient.gender === 1 ? '男' : selectedPatient.gender === 2 ? '女' : '未知'}}
+            </text>
+            <text class="info-text" wx:else>请先选择就诊人</text>
+          </view>
+        </view>
+        
+        <!-- 患者年龄 -->
+        <view class="form-item">
+          <view class="form-label">
+            <text class="label-text">患者年龄</text>
+          </view>
+          <view class="info-display">
+            <text class="info-text" wx:if="{{selectedPatient}}">
+              {{selectedPatient.age ? selectedPatient.age + '岁' : '未知'}}
+            </text>
+            <text class="info-text" wx:else>请先选择就诊人</text>
+          </view>
+        </view>
+        
+        <!-- 是否需要助排二便 -->
+        <view class="form-item">
+          <view class="form-label">
+            <text class="label-text">是否需要助排二便</text>
+          </view>
+          <radio-group 
+            class="radio-group"
+            bindchange="onRadioChange"
+            data-field="needToiletAssist"
+          >
+            <label class="radio-item">
+              <radio value="1" checked="{{formData.needToiletAssist === '1'}}" />
+              <text class="radio-text">需要</text>
+            </label>
+            <label class="radio-item">
+              <radio value="0" checked="{{formData.needToiletAssist === '0'}}" />
+              <text class="radio-text">不需要</text>
+            </label>
+          </radio-group>
+        </view>
+        
+        <!-- 期望咨询时间 -->
+        <view class="form-item">
+          <view class="form-label">
+            <text class="label-text">期望咨询时间</text>
+            <text class="label-tip">（可选今天及以后6天）</text>
+          </view>
+          <view class="time-selector" bindtap="onShowConsultTimePicker">
+            <view class="selector-content">
+              <view wx:if="{{consultDateTime}}" class="selected-info">
+                <text class="info-name">{{consultDateTime}}</text>
+              </view>
+              <view wx:else class="placeholder">
+                <text class="placeholder-text">请选择期望咨询时间</text>
+              </view>
+            </view>
+            <view class="selector-arrow">></view>
+          </view>
+        </view>
+        
+        <!-- 动态表单字段 -->
+        <view wx:for="{{formFields}}" wx:key="name" class="form-item">
+          <view class="form-label">
+            <text class="label-text">{{item.label}}</text>
+            <text class="required" wx:if="{{item.required}}">*</text>
+          </view>
+          
+          <!-- 文本输入 -->
+          <input 
+            wx:if="{{item.type === 'text'}}"
+            class="form-input"
+            name="{{item.name}}"
+            placeholder="{{item.placeholder}}"
+            value="{{formData[item.name]}}"
+            bindinput="onFormInput"
+            data-field="{{item.name}}"
+          />
+          
+          <!-- 数字输入 -->
+          <input 
+            wx:if="{{item.type === 'number'}}"
+            class="form-input"
+            type="number"
+            name="{{item.name}}"
+            placeholder="{{item.placeholder}}"
+            value="{{formData[item.name]}}"
+            bindinput="onFormInput"
+            data-field="{{item.name}}"
+          />
+          
+          <!-- 日期选择 -->
+          <picker 
+            wx:if="{{item.type === 'date'}}"
+            mode="date"
+            class="form-picker"
+            value="{{formData[item.name]}}"
+            bindchange="onDateChange"
+            data-field="{{item.name}}"
+          >
+            <view class="picker-text">
+              {{formData[item.name] || item.placeholder}}
+            </view>
+          </picker>
+          
+          <!-- 单选框 -->
+          <radio-group 
+            wx:if="{{item.type === 'radio'}}"
+            class="radio-group"
+            bindchange="onRadioChange"
+            data-field="{{item.name}}"
+          >
+            <label wx:for="{{item.options}}" wx:key="value" class="radio-item">
+              <radio value="{{item.value}}" checked="{{formData[item.name] === item.value}}" />
+              <text class="radio-text">{{item.label}}</text>
+            </label>
+          </radio-group>
+          
+          <!-- 下拉选择 -->
+          <picker 
+            wx:if="{{item.type === 'select'}}"
+            mode="selector"
+            range="{{item.options}}"
+            range-key="label"
+            class="form-picker"
+            value="{{formData[item.name]}}"
+            bindchange="onSelectChange"
+            data-field="{{item.name}}"
+            data-options="{{item.options}}"
+          >
+            <view class="picker-text">
+              {{getSelectedOptionLabel(item.name) || item.placeholder}}
+            </view>
+          </picker>
+          
+          <!-- 多行文本 -->
+          <textarea 
+            wx:if="{{item.type === 'textarea'}}"
+            class="form-textarea"
+            name="{{item.name}}"
+            placeholder="{{item.placeholder}}"
+            value="{{formData[item.name]}}"
+            bindinput="onFormInput"
+            data-field="{{item.name}}"
+            maxlength="500"
+          />
+        </view>
+        
+        <!-- 既往病史 -->
+        <view class="form-item">
+          <view class="form-label">
+            <text class="label-text">既往病史</text>
+          </view>
+          <textarea 
+            class="form-textarea"
+            name="diseaseInfo"
+            placeholder="请描述患者的既往病史（选填）"
+            value="{{formData.diseaseInfo}}"
+            bindinput="onFormInput"
+            data-field="diseaseInfo"
+            maxlength="500"
+          />
+          <text class="char-count">{{formData.diseaseInfo.length || 0}}/500</text>
+        </view>
+      </view>
+    </form>
+  </view>
+
+  <!-- 预约时间选择（智慧养老设备不显示） -->
+  <view class="time-section" wx:if="{{service.category !== '智慧养老'}}">
+    <view class="section-title">预约时间</view>
+    <view class="section-subtitle">（可选明天及以后6天）</view>
+    <view class="time-selector" bindtap="onShowTimePicker">
+      <view class="selector-content">
+        <view wx:if="{{selectedDateTime}}" class="selected-info">
+          <text class="info-name">{{selectedDateTime}}</text>
+        </view>
+        <view wx:else class="placeholder">
+          <text class="placeholder-text">请选择预约时间</text>
+        </view>
+      </view>
+      <view class="selector-arrow">></view>
+    </view>
+    <!-- 调试信息 - 已隐藏 -->
+    <!-- 
+    <view class="debug-info" style="font-size: 12px; color: #999; margin-top: 5px;">
+      <text>调试: selectedDateTime = "{{selectedDateTime}}"</text>
+    </view>
+    -->
+  </view>
+
+  <!-- 备注信息 -->
+  <view class="remark-section">
+    <view class="section-title">备注信息</view>
+    <textarea 
+      class="remark-textarea"
+      placeholder="请输入特殊需求或备注信息（选填）"
+      value="{{remark}}"
+      bindinput="onRemarkInput"
+      maxlength="200"
+    />
+  </view>
+
+  <!-- 底部操作栏 -->
+  <view class="bottom-actions">
+    <view class="price-summary">
+      <text class="summary-label">总计：</text>
+      <text class="summary-price">¥{{service.price}}</text>
+    </view>
+    <view class="action-buttons">
+      <button class="btn-secondary" bindtap="onContactService">联系客服</button>
+      <button class="btn-primary" bindtap="onSubmitOrder">{{service.category === '智慧养老' ? '立即购买' : '立即预约'}}</button>
+    </view>
+  </view>
+</view>
+
+<!-- 患者选择弹窗 -->
+<view wx:if="{{showPatientModal}}" class="modal-overlay" bindtap="onCloseModal">
+  <view class="modal-content" catchtap="stopPropagation">
+    <view class="modal-header">
+      <text class="modal-title">选择患者</text>
+      <text class="modal-close" bindtap="onCloseModal">×</text>
+    </view>
+    <view class="modal-body">
+      <view wx:for="{{patientList}}" wx:key="id" class="modal-item" bindtap="onPatientSelect" data-index="{{index}}">
+        <view class="item-info">
+          <text class="item-name">{{item.name}}</text>
+          <text class="item-detail">{{item.phone}} | {{item.idCard}}</text>
+        </view>
+        <view class="item-check" wx:if="{{selectedPatient.id === item.id}}">✓</view>
+      </view>
+      <view wx:if="{{patientList.length === 0}}" class="empty-state">
+        <text class="empty-text">暂无患者信息</text>
+      </view>
+    </view>
+  </view>
+</view>
+
+<!-- 地址选择弹窗 -->
+<view wx:if="{{showAddressModal}}" class="modal-overlay" bindtap="onCloseModal">
+  <view class="modal-content" catchtap="stopPropagation">
+    <view class="modal-header">
+      <text class="modal-title">选择服务地址</text>
+      <text class="modal-close" bindtap="onCloseModal">×</text>
+    </view>
+    <view class="modal-body">
+      <view wx:for="{{addressList}}" wx:key="id" class="modal-item" bindtap="onAddressSelect" data-index="{{index}}">
+        <view class="item-info">
+          <text class="item-name">{{item.name}} {{item.phone}}</text>
+          <text class="item-detail">{{item.province}}{{item.city}}{{item.district}}{{item.address}}</text>
+        </view>
+        <view class="item-check" wx:if="{{selectedAddress.id === item.id}}">✓</view>
+      </view>
+      <view wx:if="{{addressList.length === 0}}" class="empty-state">
+        <text class="empty-text">暂无地址信息</text>
+      </view>
+    </view>
+  </view>
+</view>
+
+<!-- 日历选择器 -->
+<calendar-picker 
+  show="{{showTimePicker}}"
+  min-date="{{minDate}}"
+  max-date="{{maxDate}}"
+  selected-date-time="{{selectedDateTime}}"
+  bind:confirm="onTimePickerConfirm"
+  bind:close="onTimePickerClose"
+/>
+
+<!-- 咨询时间选择器 -->
+<calendar-picker 
+  show="{{showConsultTimePicker}}"
+  min-date="{{consultMinDate}}"
+  max-date="{{consultMaxDate}}"
+  selected-date-time="{{consultDateTime}}"
+  bind:confirm="onConsultTimePickerConfirm"
+  bind:close="onConsultTimePickerClose"
+/>
+
+<!-- 加载状态 -->
+<view wx:if="{{loading}}" class="loading-overlay">
+  <view class="loading-content">
+    <text class="loading-text">提交中...</text>
+  </view>
+</view>

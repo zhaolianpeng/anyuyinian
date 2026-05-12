@@ -1,0 +1,31 @@
+<view class="test-container">
+  <view class="test-header">
+    <text class="test-title">咨询功能测试</text>
+    <text class="test-subtitle">测试在线咨询功能的各个组件</text>
+  </view>
+
+  <view class="test-actions">
+    <button class="test-btn" bindtap="onRetryTests">重新测试</button>
+    <button class="test-btn back" bindtap="onBackToHome">返回首页</button>
+  </view>
+
+  <view class="test-results">
+    <text class="results-title">测试结果：</text>
+    <scroll-view class="results-list" scroll-y="true">
+      <view 
+        wx:for="{{testResults}}" 
+        wx:key="index"
+        class="result-item"
+      >
+        <text class="result-text">{{item}}</text>
+      </view>
+    </scroll-view>
+  </view>
+
+  <view class="test-info">
+    <text class="info-title">测试说明：</text>
+    <text class="info-text">1. 页面路径检查：验证当前页面路径是否正确</text>
+    <text class="info-text">2. API导入检查：验证咨询相关API是否正确导入</text>
+    <text class="info-text">3. 页面跳转测试：验证能否正常跳转到咨询页面</text>
+  </view>
+</view>

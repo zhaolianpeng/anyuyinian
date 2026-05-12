@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
+	"path/filepath"
 	"time"
 	"wxcloudrun-golang/db"
 	"wxcloudrun-golang/service"
@@ -28,6 +30,14 @@ func main() {
 			time.Now().Format("2006-01-02 15:04:05"))
 	})
 
+	staticRoot := os.Getenv("STATIC_ROOT")
+	if staticRoot == "" {
+		staticRoot = "/home/ubuntu/data"
+	}
+	registerStaticDir("/static/", filepath.Join(staticRoot, "static"))
+	registerStaticDir("/images/", filepath.Join(staticRoot, "images"))
+	registerStaticDir("/video/", filepath.Join(staticRoot, "video"))
+
 	// 基础页面和统计接口
 	http.HandleFunc("/", service.NewLogMiddleware(service.IndexHandler))
 	http.HandleFunc("/api/count", service.NewLogMiddleware(service.CounterHandler))
@@ -37,6 +47,7 @@ func main() {
 
 	// 首页初始化接口
 	http.HandleFunc("/api/home/init", service.NewLogMiddleware(service.HomeInitHandler))
+	http.HandleFunc("/api/media/images", service.MediaImagesHandler)
 
 	// 文件上传和管理接口
 	http.HandleFunc("/api/upload", service.NewLogMiddleware(service.UploadHandler))
@@ -147,5 +158,21 @@ func main() {
 	http.HandleFunc("/api/consultation/notifications", service.NewLogMiddleware(service.GetUnreadNotificationsHandler))
 	http.HandleFunc("/api/consultation/notification/read", service.NewLogMiddleware(service.MarkNotificationAsReadHandler))
 
-	log.Fatal(http.ListenAndServe(":80", nil))
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "80"
+	}
+
+	log.Printf("server listening on :%s", port)
+	log.Fatal(http.ListenAndServe(":"+port, nil))
+}
+
+func registerStaticDir(routePrefix, dir string) {
+	fileServer := http.FileServer(http.Dir(dir))
+	http.Handle(routePrefix, http.StripPrefix(routePrefix, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Cache-Control", "public, max-age=3600")
+		fileServer.ServeHTTP(w, r)
+	})))
+	log.Printf("serving %s from %s", routePrefix, dir)
 }

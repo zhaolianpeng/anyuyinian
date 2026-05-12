@@ -1,0 +1,86 @@
+<view class="container">
+  <view class="header">
+    <text class="title">网络连接测试</text>
+    <text class="subtitle">测试统一服务端 API 连通性</text>
+  </view>
+
+  <!-- 网络状态 -->
+  <view class="network-status">
+    <text class="status-title">网络状态</text>
+    <view class="status-info">
+      <text class="status-text">连接状态: {{networkStatus.isConnected ? '已连接' : '未连接'}}</text>
+      <text class="status-text">网络类型: {{networkStatus.networkType || '未知'}}</text>
+    </view>
+  </view>
+
+  <!-- 测试按钮 -->
+  <view class="test-actions">
+    <button 
+      class="test-btn {{isTesting ? 'disabled' : ''}}" 
+      bindtap="testCloudContainer"
+      disabled="{{isTesting}}"
+    >
+      {{isTesting ? '测试中...' : '开始测试'}}
+    </button>
+    
+    <button 
+      class="retest-btn" 
+      bindtap="retest"
+      disabled="{{isTesting}}"
+    >
+      重新测试
+    </button>
+  </view>
+
+  <!-- 测试结果 -->
+  <view class="test-results" wx:if="{{testResults.length > 0}}">
+    <text class="results-title">测试结果</text>
+    
+    <view class="result-item" wx:for="{{testResults}}" wx:key="name">
+      <view class="result-header">
+        <text class="result-name">{{item.name}}</text>
+        <view class="result-status {{item.status}}">
+          <text wx:if="{{item.status === 'success'}}" class="status-icon">✓</text>
+          <text wx:elif="{{item.status === 'error'}}" class="status-icon">✗</text>
+          <text wx:elif="{{item.status === 'warning'}}" class="status-icon">⚠</text>
+          <text wx:else class="status-icon">⋯</text>
+        </view>
+      </view>
+      
+      <view class="result-message">
+        <text class="message-text">{{item.message}}</text>
+        <text 
+          wx:if="{{item.status === 'error'}}" 
+          class="error-detail"
+          bindtap="viewError"
+          data-index="{{index}}"
+        >
+          查看详情
+        </text>
+      </view>
+      
+      <view class="result-data" wx:if="{{item.data}}">
+        <text class="data-label">返回数据:</text>
+        <text class="data-content">{{JSON.stringify(item.data)}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 操作按钮 -->
+  <view class="action-buttons" wx:if="{{testResults.length > 0}}">
+    <button class="copy-btn" bindtap="copyResults">
+      复制测试结果
+    </button>
+  </view>
+
+  <!-- 说明信息 -->
+  <view class="info-section">
+    <text class="info-title">说明</text>
+    <view class="info-content">
+      <text class="info-text">• 当前小程序统一通过 wx.request 直连你的服务端</text>
+      <text class="info-text">• 业务 GET 请求会按统一封装转换为 POST + 方法覆盖头</text>
+      <text class="info-text">• 如果测试失败，请检查服务端、Nginx 和域名转发是否正常</text>
+      <text class="info-text">• 确保小程序已正确配置合法域名和服务端基础地址</text>
+    </view>
+  </view>
+</view> 

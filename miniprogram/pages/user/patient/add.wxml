@@ -1,0 +1,66 @@
+<!--pages/user/patient/add.wxml-->
+<view class="container">
+  <form bindsubmit="submitForm">
+    <!-- 基本信息 -->
+    <view class="form-section">
+      <view class="form-item">
+        <text class="label">姓名</text>
+        <input class="input" name="name" value="{{formData.name}}" placeholder="请输入患者姓名" />
+      </view>
+      <view class="form-item">
+        <text class="label">身份证号</text>
+        <input class="input" name="idCard" value="{{formData.idCard}}" placeholder="请输入身份证号" />
+      </view>
+      <view class="form-item">
+        <text class="label">手机号</text>
+        <input class="input" name="phone" value="{{formData.phone}}" placeholder="请输入手机号" type="number" />
+      </view>
+    </view>
+
+    <!-- 其他信息 -->
+    <view class="form-section">
+      <view class="form-item">
+        <text class="label">性别</text>
+        <picker mode="selector" range="{{genderOptions}}" value="{{genderIndex}}" bindchange="genderChange">
+          <view class="picker">
+            <text wx:if="{{genderIndex >= 0}}">{{genderOptions[genderIndex]}}</text>
+            <text wx:else class="placeholder">请选择性别</text>
+          </view>
+        </picker>
+      </view>
+      <view class="form-item">
+        <text class="label">出生日期</text>
+        <picker mode="date" value="{{formData.birthday}}" bindchange="birthdayChange">
+          <view class="picker">
+            <text wx:if="{{formData.birthday}}">{{formData.birthday}}</text>
+            <text wx:else class="placeholder">请选择出生日期</text>
+          </view>
+        </picker>
+      </view>
+      <view class="form-item">
+        <text class="label">与本人关系</text>
+        <picker mode="selector" range="{{relationOptions}}" value="{{relationIndex}}" bindchange="relationChange">
+          <view class="picker">
+            <text wx:if="{{relationIndex >= 0}}">{{relationOptions[relationIndex]}}</text>
+            <text wx:else class="placeholder">请选择关系</text>
+          </view>
+        </picker>
+      </view>
+    </view>
+
+    <!-- 设置默认 -->
+    <view class="form-section">
+      <view class="form-item">
+        <text class="label">设为默认患者</text>
+        <switch name="isDefault" checked="{{formData.isDefault}}" bindchange="switchChange" />
+      </view>
+    </view>
+
+    <!-- 提交按钮 -->
+    <view class="submit-section">
+      <button class="submit-btn" form-type="submit" loading="{{submitting}}">
+        {{isEdit ? '保存修改' : '保存患者'}}
+      </button>
+    </view>
+  </form>
+</view>

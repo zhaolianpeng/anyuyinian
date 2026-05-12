@@ -7,34 +7,22 @@
 ## 项目结构
 
 ```
-├── anyuyinian/                    # 后端项目目录
-│   ├── main.go                   # 主程序入口
-│   ├── service/                  # 业务逻辑层
-│   ├── db/                       # 数据访问层
-│   ├── config/                   # 配置文件
-│   ├── docs/                     # 后端文档
-│   │   ├── backend/              # 后端实现文档
-│   │   └── frontend/             # 前端相关文档
-│   ├── tests/                    # 测试脚本
-│   │   ├── backend/              # 后端测试脚本
-│   │   └── frontend/             # 前端测试脚本
-│   └── README.md                 # 后端项目说明
-├── miniprogram/                   # 前端项目目录
+├── main.go                       # 后端主程序入口
+├── service/                      # 业务逻辑层
+├── db/                           # 数据访问层
+├── config/                       # 配置文件
+├── docs/                         # 后端文档
+├── tests/                        # 后端测试脚本
+├── scripts/                      # 后端脚本
+├── miniprogram/                  # 小程序前端工程
 │   ├── app.js                    # 小程序入口文件
 │   ├── pages/                    # 页面文件
 │   ├── components/               # 组件文件
 │   ├── utils/                    # 工具类文件
 │   ├── docs/                     # 前端文档
-│   │   └── frontend/             # 前端实现文档
 │   ├── tests/                    # 前端测试脚本
-│   └── README.md                 # 前端项目说明
-├── docs/                         # 项目文档总览
-│   ├── backend/                  # 后端文档
-│   └── frontend/                 # 前端文档
-├── tests/                        # 项目测试总览
-│   ├── backend/                  # 后端测试
-│   └── frontend/                 # 前端测试
-└── README.md                     # 项目总说明
+│   └── video/                    # 前端视频资源目录
+└── README.md                     # 项目说明
 ```
 
 ## 技术栈
@@ -103,7 +91,7 @@ go run main.go
 ```
 
 ### 前端启动
-1. 使用微信开发者工具打开 `miniprogram` 目录
+1. 使用微信开发者工具打开仓库内的 `miniprogram` 目录
 2. 配置云托管环境
 3. 编译并预览
 

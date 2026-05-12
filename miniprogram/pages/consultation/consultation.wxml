@@ -1,0 +1,87 @@
+<view class="consultation-container">
+  <!-- 顶部导航栏 -->
+  <view class="header">
+    <view class="back-btn" bindtap="onBack">
+      <text class="back-icon">←</text>
+    </view>
+    <view class="title">在线咨询</view>
+    <view class="status">
+      <text class="status-text {{consultationStatus === 'waiting' ? 'waiting' : consultationStatus === 'chatting' ? 'chatting' : 'closed'}}">
+        {{consultationStatus === 'waiting' ? '等待回复' : consultationStatus === 'chatting' ? '咨询中' : '已结束'}}
+      </text>
+    </view>
+  </view>
+
+  <!-- 聊天记录区域 -->
+  <scroll-view class="chat-area" scroll-y="true" scroll-into-view="{{scrollToMessage}}" scroll-with-animation="true">
+    <view class="chat-messages" wx:if="{{messages.length > 0}}">
+      <view 
+        wx:for="{{messages}}" 
+        wx:key="id" 
+        class="message-item {{item.senderType === 'user' ? 'user-message' : 'admin-message'}}"
+        id="msg-{{item.id}}"
+      >
+        <view class="message-avatar">
+          <image 
+                            src="{{item.senderType === 'user' ? userInfo.avatarUrl || '/images/default-avatar.png' : '/images/default-avatar.png'}}" 
+            class="avatar-img"
+          />
+        </view>
+        <view class="message-content">
+          <view class="message-text">{{item.content}}</view>
+          <view class="message-time">{{item.createTime}}</view>
+        </view>
+      </view>
+    </view>
+    
+    <!-- 空状态 -->
+    <view class="empty-state" wx:if="{{messages.length === 0}}">
+      <image src="/images/empty-state.png" class="empty-image" />
+      <text class="empty-text">开始您的咨询吧！</text>
+      <text class="empty-subtext">我们会尽快为您解答</text>
+    </view>
+  </scroll-view>
+
+  <!-- 输入区域 -->
+  <view class="input-area" wx:if="{{consultationStatus !== 'closed'}}">
+    <view class="input-container">
+      <input 
+        class="message-input" 
+        placeholder="请输入您的问题..." 
+        value="{{inputMessage}}"
+        bindinput="onInputChange"
+        bindconfirm="sendMessage"
+        confirm-type="send"
+        maxlength="500"
+      />
+      <view class="send-btn {{inputMessage.trim() ? 'active' : ''}}" bindtap="sendMessage">
+        <text class="send-text">发送</text>
+      </view>
+    </view>
+    
+    <!-- 快捷问题 -->
+    <view class="quick-questions" wx:if="{{messages.length === 0}}">
+      <text class="quick-title">常见问题：</text>
+      <view class="question-tags">
+        <view 
+          wx:for="{{quickQuestions}}" 
+          wx:key="index"
+          class="question-tag"
+          bindtap="onQuickQuestionTap"
+          data-question="{{item}}"
+        >
+          {{item}}
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 咨询结束提示 -->
+  <view class="consultation-ended" wx:if="{{consultationStatus === 'closed'}}">
+    <text class="ended-text">本次咨询已结束</text>
+    <text class="ended-subtext">如有新问题，请重新发起咨询</text>
+    <view class="restart-btn" bindtap="restartConsultation">
+      重新咨询
+    </view>
+  </view>
+</view>

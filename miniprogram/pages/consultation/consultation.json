@@ -1,0 +1,8 @@
+{
+  "navigationBarTitleText": "在线咨询",
+  "navigationBarBackgroundColor": "#667eea",
+  "navigationBarTextStyle": "white",
+  "backgroundColor": "#f5f5f5",
+  "enablePullDownRefresh": false,
+  "disableScroll": true
+}
